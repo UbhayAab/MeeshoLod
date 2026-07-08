@@ -12,14 +12,18 @@ import { icon } from '../components/icons.js';
 import { navigate } from '../router.js';
 import { esc } from '../utils/format.js';
 import { avatarColor, getInitials } from '../components/sidebar.js';
+import { getVariant } from '../variant.js';
 import { openWizard } from './lods.js';
 
 export function renderProjects(container) {
-  const lods = getLods();
+  // only show LODs for the current surface (online /u vs field /s)
+  const wantMode = getVariant().mode;
+  const lods = getLods().filter(l => (l.mode || 'online') === wantMode);
   const teams = getTeams();
 
-  // aggregate top-line
-  const allCalls = getCalls();
+  // aggregate top-line (scoped to this surface's LODs)
+  const lodIds = new Set(lods.map(l => l.id));
+  const allCalls = getCalls().filter(c => lodIds.has(c.lodId));
   const totalContacts = lods.reduce((s, l) => s + l.contacts.length, 0);
   const connected = allCalls.filter(c => c.connected).length;
   const connectRate = allCalls.length ? Math.round(connected / allCalls.length * 100) : 0;

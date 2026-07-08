@@ -13,10 +13,13 @@ import { synthesizeByQuestion, aiStatus } from '../ai.js';
 import { showToast } from '../components/toast.js';
 import { icon } from '../components/icons.js';
 import { navigate } from '../router.js';
+import { getVariant } from '../variant.js';
 import { esc, fmtDate } from '../utils/format.js';
 
 export function renderInsights(container) {
-  const lods = getLods();
+  // only LODs for the current surface (online /u vs field /s)
+  const wantMode = getVariant().mode;
+  const lods = getLods().filter(l => (l.mode || 'online') === wantMode);
 
   if (!lods.length) {
     container.innerHTML = `

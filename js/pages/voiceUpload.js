@@ -15,7 +15,11 @@ import { matchContactByFilename, formatPhone } from '../utils/parse.js';
 import { showToast } from '../components/toast.js';
 import { icon } from '../components/icons.js';
 import { navigate } from '../router.js';
+import { getVariant } from '../variant.js';
 import { esc, fmtDuration } from '../utils/format.js';
+
+// LODs for the current surface only (voice-upload is the field/offline surface)
+const surfaceLods = () => getLods().filter(l => (l.mode || 'online') === getVariant().mode);
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // Whisper's per-file cap
 const CONCURRENCY = 2;
@@ -31,7 +35,7 @@ export function renderVoiceUpload(c) {
   rows = [];
   processing = false;
 
-  const lods = getLods();
+  const lods = surfaceLods();
   if (!lods.length) {
     container.innerHTML = `
       <div class="page-header"><div><h1>Upload Recordings</h1><p class="header-subtitle">Listen Or Die</p></div></div>
@@ -53,7 +57,7 @@ export function renderVoiceUpload(c) {
 function currentLod() { return getLod(lodId); }
 
 function render() {
-  const lods = getLods();
+  const lods = surfaceLods();
   const lod = currentLod();
   const ai = aiStatus();
 

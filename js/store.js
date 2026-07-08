@@ -316,38 +316,14 @@ export function seedIfEmpty() {
         'Return pickup was missed twice; wants a guaranteed slot.',
       ],
     },
-    // ---------- OFFLINE / FIELD LODs (Sumit's surface) ----------
+    // ---------- OFFLINE / FIELD LOD (Sumit's surface) — single project ----------
     {
       team: 'seller', mode: 'offline', contacts: 10, shops: true,
-      name: 'Kirana on-ground visits — Indore',
-      goal: 'Field visits to kirana + small sellers to understand real blockers to selling on Meesho — onboarding friction, catalog effort, trust, and cash-flow — recorded in person and auto-bucketed.',
-      cols: [['area','Area'],['shop_type','Shop type'],['monthly_sales','Monthly sales']],
-      data: (i) => ({ area: ['Rajwada','Vijay Nagar','Palasia','Sudama Nagar'][i%4], shop_type: ['Kirana','Apparel','Cosmetics','General'][i%4], monthly_sales: `₹${40 + (i*7)%120}k` }),
-      tags: ['Onboarding friction','Catalog effort','Trust','Cash-flow','Wants training','Ready to list'],
-    },
-    {
-      team: 'logistics', mode: 'offline', contacts: 10,
-      name: 'Delivery partner ground interviews',
-      goal: 'On-ground conversations with delivery partners about earnings clarity, app usability, payout timing, and safety — recorded at the hub and bucketed into fixable themes.',
-      cols: [['hub','Hub'],['tenure_m','Tenure (mo)'],['daily_orders','Orders/day']],
-      data: (i) => ({ hub: ['Andheri','Powai','Thane','Vashi'][i%4], tenure_m: String(1 + (i*3)%18), daily_orders: String(18 + (i*4)%25) }),
-      tags: ['Payout timing','Earnings clarity','App usability','Safety','Long distances','Wants incentives'],
-    },
-    {
-      team: 'grocery', mode: 'offline', contacts: 8,
-      name: 'Store audit — dark store freshness',
-      goal: 'Walk dark stores and talk to staff about FnV freshness, cold-chain gaps, wastage, and picking accuracy — recorded on the floor and bucketed for ops.',
-      cols: [['store','Store'],['role','Role'],['shift','Shift']],
-      data: (i) => ({ store: ['DS-Kandivali','DS-Chembur','DS-Kurla'][i%3], role: ['Picker','Store lead','QC'][i%3], shift: ['AM','PM'][i%2] }),
-      tags: ['Cold-chain gap','Wastage','Picking accuracy','Staffing','Layout'],
-    },
-    {
-      team: 'wellness', mode: 'offline', contacts: 8,
-      name: 'Pharmacy partner field pulse',
-      goal: 'In-person chats with pharmacy partners on prescription-upload friction, delivery SLAs, margin, and returns for medicines — recorded and bucketed.',
-      cols: [['city','City'],['type','Type'],['orders_wk','Orders/wk']],
-      data: (i) => ({ city: ['Nashik','Aurangabad','Solapur'][i%3], type: ['Standalone','Chain'][i%2], orders_wk: String(20 + (i*6)%60) }),
-      tags: ['Rx upload friction','Delivery SLA','Margin','Returns','Cold storage'],
+      name: 'Sumit Ground LOD',
+      goal: 'On-ground field visits — record real conversations with sellers, partners and staff to surface blockers (onboarding, catalog effort, payouts, trust, operations) and auto-bucket them into insights.',
+      cols: [['area','Area'],['segment','Segment'],['monthly_sales','Monthly sales']],
+      data: (i) => ({ area: ['Rajwada','Vijay Nagar','Palasia','Sudama Nagar'][i%4], segment: ['Kirana','Delivery partner','Dark store','Apparel'][i%4], monthly_sales: `₹${40 + (i*7)%120}k` }),
+      tags: ['Onboarding friction','Catalog effort','Payout timing','Trust','Operations','Wants training'],
     },
     {
       team: 'electronics', mode: 'online', contacts: 10,
@@ -394,22 +370,6 @@ export function seedIfEmpty() {
         'Was not home at delivery time; wants a delivery-slot choice.',
         'Got cold feet on quality since it was unbranded — prepaid felt risky.',
       ],
-    },
-    {
-      team: 'support', mode: 'offline', contacts: 8,
-      name: 'Return-pickup rider ride-alongs',
-      goal: 'Ride along with return-pickup riders and record the on-ground friction — customer disputes at door, packaging checks, app steps, and time lost per pickup.',
-      cols: [['zone','Zone'],['pickups_day','Pickups/day'],['tenure_m','Tenure (mo)']],
-      data: (i) => ({ zone: ['North','South','East','West'][i%4], pickups_day: String(12 + (i*3)%20), tenure_m: String(2 + (i*4)%20) }),
-      tags: ['Door disputes','Packaging check','App steps','Time lost','Safety'],
-    },
-    {
-      team: 'fashion', mode: 'offline', contacts: 8, shops: true,
-      name: 'Boutique supplier ground visits — Surat',
-      goal: 'In-person visits to Surat textile suppliers on catalog quality, MOQ, dispatch SLA, and what stops them scaling on Meesho — recorded and bucketed.',
-      cols: [['cluster','Cluster'],['category','Category'],['looms','Looms']],
-      data: (i) => ({ cluster: ['Ring Road','Sahara Darwaja','Salabatpura'][i%3], category: ['Sarees','Dress material','Dupattas'][i%3], looms: String(4 + (i*3)%30) }),
-      tags: ['Catalog quality','MOQ','Dispatch SLA','Working capital','Wants scale'],
     },
   ];
 
