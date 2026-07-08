@@ -18,6 +18,8 @@ export const AI_DEFAULTS = {
   model: 'gpt-4o',
   // deep model → cross-call synthesis reports (reasoning model, slower)
   deepModel: 'gpt-5.5',
+  // audio → transcript, for the voice-upload flow
+  whisperModel: 'whisper-1',
 };
 
 export const ROLES = [

@@ -21,7 +21,9 @@ import { renderProjects } from './pages/projects.js';
 import { renderLods } from './pages/lods.js';
 import { renderLodDetail } from './pages/lodDetail.js';
 import { renderCalling } from './pages/calling.js';
+import { renderVoiceUpload } from './pages/voiceUpload.js';
 import { renderResults } from './pages/results.js';
+import { renderInsights } from './pages/insights.js';
 import { renderAdmin } from './pages/admin.js';
 import { renderSettings } from './pages/settings.js';
 import { renderRecord } from './pages/record.js';
@@ -102,11 +104,13 @@ function init() {
     // route with params.id — dispatch list vs detail here
     registerRoute('lods', (c, params) => params.id ? renderLodDetail(c, params) : renderLods(c, params));
     registerRoute('results', renderResults);
+    registerRoute('insights', renderInsights);   // Sumit — per-question rollup (both surfaces)
     registerRoute('admin', renderAdmin);
     registerRoute('settings', renderSettings);
     // variant-specific
-    registerRoute('calling', renderCalling);   // online (u)
-    registerRoute('record', renderRecord);      // offline (s)
+    registerRoute('calling', renderCalling);            // online (u)
+    registerRoute('voice-upload', renderVoiceUpload);   // offline (s) — Sumit: upload recording → transcribe → summarize
+    registerRoute('record', renderRecord);              // offline (s) — live on-ground recorder
     registerRoute('sessions', (c, params) => renderSessions(c, params)); // offline (s)
 
     setAuthGuard(() => isAuthed());

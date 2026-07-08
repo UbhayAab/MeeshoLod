@@ -15,6 +15,8 @@ import { esc } from '../utils/format.js';
 import { getVariant } from '../variant.js';
 
 const MGMT = ['admin', 'lead'];
+// Nav is variant-defined (js/variant.js). Sumit's Insights + Upload-Recordings
+// items are wired into those nav lists there, not inline here.
 const NAV_ITEMS = getVariant().nav;
 
 const AVATAR_COLORS = ['#F43397', '#7B1264', '#5145C4', '#A21C85', '#C0761C', '#2A63A6'];

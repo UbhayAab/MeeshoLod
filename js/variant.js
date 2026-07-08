@@ -19,6 +19,7 @@ const NAV_ONLINE = [
     { id: 'lods',      label: 'LODs',            icon: 'target',    route: 'lods',      roles: ['admin','lead','caller'] },
     { id: 'calling',   label: 'Calling Console', icon: 'phoneCall', route: 'calling',   roles: ['admin','lead','caller'] },
     { id: 'results',   label: 'Results',         icon: 'chart',     route: 'results',   roles: ['admin','lead','caller'] },
+    { id: 'insights',  label: 'Insights',        icon: 'activity',  route: 'insights',  roles: ['admin','lead','caller'] },
   ]},
   { section: 'Management', items: [
     { id: 'admin',    label: 'Teams & Users', icon: 'shieldCheck', route: 'admin',    roles: ['admin','lead'] },
@@ -28,11 +29,12 @@ const NAV_ONLINE = [
 
 const NAV_OFFLINE = [
   { section: 'Field', items: [
-    { id: 'dashboard', label: 'Overview',       icon: 'grid',      route: 'dashboard', roles: ['admin','lead','caller'] },
-    { id: 'record',    label: 'Record',         icon: 'mic',       route: 'record',    roles: ['admin','lead','caller'] },
-    { id: 'sessions',  label: 'Field Sessions', icon: 'activity',  route: 'sessions',  roles: ['admin','lead','caller'] },
-    { id: 'projects',  label: 'Projects',       icon: 'inbox',     route: 'projects',  roles: ['admin','lead','caller'] },
-    { id: 'results',   label: 'Insights',       icon: 'chart',     route: 'results',   roles: ['admin','lead','caller'] },
+    { id: 'dashboard',    label: 'Overview',          icon: 'grid',     route: 'dashboard',    roles: ['admin','lead','caller'] },
+    { id: 'record',       label: 'Record',            icon: 'mic',      route: 'record',       roles: ['admin','lead','caller'] },
+    { id: 'voice-upload', label: 'Upload Recordings', icon: 'upload',   route: 'voice-upload', roles: ['admin','lead','caller'] },
+    { id: 'sessions',     label: 'Field Sessions',    icon: 'activity', route: 'sessions',     roles: ['admin','lead','caller'] },
+    { id: 'projects',     label: 'Projects',          icon: 'inbox',    route: 'projects',     roles: ['admin','lead','caller'] },
+    { id: 'insights',     label: 'Insights',          icon: 'chart',    route: 'insights',     roles: ['admin','lead','caller'] },
   ]},
   { section: 'Management', items: [
     { id: 'admin',    label: 'Teams & Users', icon: 'shieldCheck', route: 'admin',    roles: ['admin','lead'] },

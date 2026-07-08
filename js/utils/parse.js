@@ -145,6 +145,23 @@ export function parseContactsDeterministic(text) {
   return { columns, rows, invalid, dup, hasHeader };
 }
 
+// Voice-upload helper: guess which LOD contact an audio filename belongs to,
+// by looking for a phone number or ext_id embedded in the filename. Returns
+// the contact only on an unambiguous single match — never guesses between two.
+export function matchContactByFilename(filename, contacts) {
+  const name = String(filename || '');
+  const phones = phoneCandidates(name.replace(/[_-]/g, ' '));
+  const tokens = name.toLowerCase().match(/[a-z0-9]+/g) || [];
+
+  const matches = new Set();
+  for (const c of contacts || []) {
+    const contactPhones = [c.phone, ...(c.phones || [])].filter(Boolean);
+    if (phones.some(p => contactPhones.includes(p))) matches.add(c);
+    else if (c.ext_id && tokens.includes(String(c.ext_id).toLowerCase())) matches.add(c);
+  }
+  return matches.size === 1 ? [...matches][0] : null;
+}
+
 export function csvEscape(v) {
   const s = String(v ?? '');
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;

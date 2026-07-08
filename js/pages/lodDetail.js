@@ -52,6 +52,7 @@ export function renderLodDetail(container, params) {
       </div>
       <div class="pg-actions">
         <button class="btn btn-primary" id="ld-start">${icon('phoneCall')} Start calling</button>
+        <button class="btn btn-secondary" id="ld-upload">${icon('mic')} Upload recordings</button>
         <button class="btn btn-secondary" id="ld-add">${icon('userPlus')} Add contacts</button>
         <button class="btn btn-ghost" id="ld-toggle">${lod.status === 'active' ? `${icon('clock')} Pause` : `${icon('play')} Activate`}</button>
         <button class="btn btn-ghost" id="ld-del" style="color:var(--danger)">${icon('trash')} Delete</button>
@@ -89,6 +90,10 @@ export function renderLodDetail(container, params) {
   container.querySelector('#ld-start').addEventListener('click', () => {
     saveSettings({ lastLodId: lod.id });
     navigate('calling');
+  });
+  container.querySelector('#ld-upload').addEventListener('click', () => {
+    saveSettings({ voiceLodId: lod.id });
+    navigate('voice-upload');
   });
   container.querySelector('#ld-toggle').addEventListener('click', () => {
     lod.status = lod.status === 'active' ? 'paused' : 'active';

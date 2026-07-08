@@ -42,7 +42,7 @@ js/app.js             boot + routes + app shell
 js/store.js           data layer (localStorage)
 js/ai.js              AI engine (parse / questions / live coach / summary / synthesis)
 js/auth.js            local skeleton RBAC
-js/pages/             login · dashboard · lods (+wizard) · lodDetail · calling · results · admin · settings
+js/pages/             login · dashboard · projects · lods (+wizard) · lodDetail · calling · voiceUpload · results · insights · admin · settings
 js/utils/parse.js     deterministic paste parser
 ```
 

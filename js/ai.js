@@ -19,7 +19,13 @@ function aiConfig() {
     apiKey: s.aiApiKey || AI_DEFAULTS.apiKey,
     model: s.aiModel || AI_DEFAULTS.model,
     deepModel: s.aiDeepModel || AI_DEFAULTS.deepModel,
+    whisperModel: s.aiWhisperModel || AI_DEFAULTS.whisperModel,
   };
+}
+
+// Same gateway/host as chat, OpenAI-compatible audio path.
+function transcribeEndpoint(chatEndpoint) {
+  return chatEndpoint.replace(/\/chat\/completions\/?$/, '/audio/transcriptions');
 }
 
 export function aiStatus() {
@@ -77,6 +83,49 @@ async function chat(messages, { model, json = false, maxTokens = 1200, temperatu
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content ?? '';
   return content;
+}
+
+// Audio file → transcript text, via the same gateway/key as chat.
+// Slower and heavier than a chat call, so it gets its own generous timeout
+// and is NOT routed through chat() — it's multipart, not JSON.
+const TRANSCRIBE_TIMEOUT_MS = 120000;
+
+export async function transcribeAudio(file, { signal } = {}) {
+  const cfg = aiConfig();
+  const url = transcribeEndpoint(cfg.endpoint);
+
+  const form = new FormData();
+  form.append('file', file, file.name || 'audio.webm');
+  form.append('model', cfg.whisperModel);
+  form.append('response_format', 'json');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TRANSCRIBE_TIMEOUT_MS);
+  if (signal) signal.addEventListener('abort', () => controller.abort(), { once: true });
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      // no Content-Type — the browser sets the multipart boundary itself
+      headers: { 'Authorization': `Bearer ${cfg.apiKey}` },
+      body: form,
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(`Transcription timed out after ${Math.round(TRANSCRIBE_TIMEOUT_MS / 1000)}s`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Transcription ${res.status}: ${text.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const text = String(data?.text || data?.transcript || '').trim();
+  if (!text) throw new Error('Empty transcript returned');
+  return text;
 }
 
 function extractJSON(text) {
@@ -307,6 +356,61 @@ Be specific and quantitative where possible. No fluff.`;
     { role: 'user', content: user },
   ], { model: cfg.deepModel, maxTokens: 6000 });
   return text || null;
+}
+
+// Per-question insights across all calls for a LOD — deep model, JSON.
+// For each question we hand the model every one-line answer extracted from
+// the calls that addressed it; it clusters them into a few response buckets
+// and COUNTS how many customers fall in each (e.g. "5 disliked pricing").
+// Returns { [questionId]: { takeaway, breakdown:[{label,count}] } }, or null.
+export async function synthesizeByQuestion({ lod, calls }) {
+  const cfg = aiConfig();
+  const questions = lod.questions || [];
+  const perQ = questions.map(q => {
+    const answers = [];
+    for (const c of calls) {
+      const a = (c.answers || {})[q.id];
+      if (a) {
+        const contact = lod.contacts.find(x => x.id === c.contactId) || {};
+        answers.push({
+          who: contact.name || c.customerLabel || contact.ext_id || contact.phone || '?',
+          answer: String(a).slice(0, 300),
+        });
+      }
+    }
+    return { id: q.id, question: q.text, count: answers.length, answers };
+  }).filter(q => q.answers.length);
+
+  if (!perQ.length) return {};
+
+  const sys = `You are the insights analyst for Meesho's LOD ("Listen Or Die") calling program. For EACH question you are given the one-line answers from every call that addressed it. Cluster those answers into a SMALL set of distinct response buckets and COUNT how many customers fall in each.
+Rules:
+- 2-5 buckets per question. Every answer maps to exactly ONE bucket; the bucket counts MUST sum to that question's answer count.
+- Bucket labels are short and phrased as a stance on the question in the customers' own framing (e.g. for "did you not like the pricing?": "Found pricing too high", "Pricing was fine"; for "did you find the assortment?": "Could not find what they wanted", "Found it").
+- Order buckets by count, largest first.
+- Also give a one-line takeaway per question.
+Reply ONLY JSON: {"insights":{"<question id>":{"takeaway":"<one line>","breakdown":[{"label":"<bucket>","count":<int>}]}}}`;
+  const user = `GOAL: ${lod.goal}\nTEAM: ${lod.name}\nQUESTIONS + ANSWERS (count = customers who answered):\n${JSON.stringify(perQ).slice(0, 24000)}`;
+  const out = await chatJSON([
+    { role: 'system', content: sys },
+    { role: 'user', content: user },
+  ], { model: cfg.deepModel, maxTokens: 4000 });
+  if (!out || !out.insights || typeof out.insights !== 'object') return null;
+
+  // normalize: coerce counts to ints, drop empty buckets, keep only real entries
+  const res = {};
+  for (const [qid, v] of Object.entries(out.insights)) {
+    if (!v) continue;
+    const breakdown = Array.isArray(v.breakdown)
+      ? v.breakdown
+          .map(b => ({ label: String(b?.label || '').trim(), count: Math.max(0, parseInt(b?.count, 10) || 0) }))
+          .filter(b => b.label && b.count > 0)
+          .sort((a, b) => b.count - a.count)
+      : [];
+    const takeaway = String(v.takeaway || '').trim();
+    if (takeaway || breakdown.length) res[qid] = { takeaway, breakdown };
+  }
+  return res;
 }
 
 export { chat as aiChat, chatJSON as aiChatJSON };

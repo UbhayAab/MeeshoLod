@@ -67,7 +67,7 @@ export function renderResults(container) {
         <div class="empty-state card card-pad" style="text-align:center; padding:60px 24px">
           <div style="font-size:40px; margin-bottom:12px">📞</div>
           <h3 style="margin-bottom:8px">No calls yet for this LOD</h3>
-          <p style="color:var(--ink-3)">Start calling — every logged call shows up here.</p>
+          <p style="color:var(--ink-3)">Start calling or upload recordings — every logged call shows up here.</p>
         </div>`;
       return;
     }
@@ -116,8 +116,8 @@ export function renderResults(container) {
               const summary = call.summary || (call.notes || '').slice(0, 90);
               return `
               <tr data-call="${call.id}" style="cursor:pointer">
-                <td><strong>${esc(c?.name || '—')}</strong>${c?.ext_id ? `<div class="mono-cell" style="font-size:11px; color:var(--ink-3)">${esc(c.ext_id)}</div>` : ''}</td>
-                <td><span class="badge badge-${d.tone}">${esc(d.label)}</span></td>
+                <td><strong>${esc(c?.name || call.customerLabel || '—')}</strong>${c?.ext_id ? `<div class="mono-cell" style="font-size:11px; color:var(--ink-3)">${esc(c.ext_id)}</div>` : ''}</td>
+                <td><span class="badge badge-${d.tone}">${esc(d.label)}</span>${call.source === 'voice_upload' ? ` <span class="badge badge-info">🎙 Uploaded</span>` : ''}</td>
                 <td class="mono-cell">${call.durationSec ? fmtDuration(call.durationSec) : '—'}</td>
                 <td><div class="tagrow" style="gap:4px">${(call.tags || []).slice(0, 3).map((t, i) => `<span class="tagchip ${CHIP_CLASSES[i % CHIP_CLASSES.length]}">${esc(t)}</span>`).join('')}</div></td>
                 <td style="max-width:320px"><span style="font:var(--t-sm); color:var(--ink-3)">${esc(summary)}${summary && !call.summary && (call.notes || '').length > 90 ? '…' : ''}</span></td>
@@ -187,11 +187,12 @@ export function renderResults(container) {
     const calls = getCalls({ lodId: lod.id });
     if (!calls.length) return showToast('No calls to export', 'warning');
     const qs = lod.questions || [];
-    const headers = ['name', 'phone', 'ext_id', 'disposition', 'duration_sec', 'summary', 'tags', 'notes', ...qs.map(q => q.text)];
+    const headers = ['name', 'phone', 'ext_id', 'source', 'disposition', 'duration_sec', 'summary', 'tags', 'notes', ...qs.map(q => q.text)];
     const rows = calls.map(call => {
       const c = lod.contacts.find(x => x.id === call.contactId);
       return [
-        c?.name || '', c?.phone || '', c?.ext_id || '',
+        c?.name || call.customerLabel || '', c?.phone || '', c?.ext_id || '',
+        call.source === 'voice_upload' ? 'recording' : 'live',
         call.disposition || '', call.durationSec || 0,
         call.summary || '', (call.tags || []).join('; '), call.notes || '',
         ...qs.map(q => (call.answers || {})[q.id] || ''),
@@ -218,11 +219,12 @@ export function renderResults(container) {
     const dataEntries = Object.entries(contact?.data || {});
 
     showModal({
-      title: `${contact?.name || 'Call'} — call detail`,
+      title: `${contact?.name || call.customerLabel || 'Call'} — call detail`,
       size: 'lg',
       content: `
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px">
           <span class="badge badge-${d.tone}">${esc(d.label)}</span>
+          ${call.source === 'voice_upload' ? `<span class="badge badge-info">🎙 ${esc(call.audioFileName || 'Uploaded recording')}</span>` : ''}
           ${call.durationSec ? `<span class="mono-cell">${fmtDuration(call.durationSec)}</span>` : ''}
           <span style="color:var(--ink-3); font:var(--t-sm)">${esc(timeAgo(call.ts))}</span>
         </div>
