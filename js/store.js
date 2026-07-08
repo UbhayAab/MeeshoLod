@@ -318,11 +318,12 @@ export function seedIfEmpty() {
     },
     // ---------- OFFLINE / FIELD LOD (Sumit's surface) — single project ----------
     {
-      team: 'seller', mode: 'offline', contacts: 10, shops: true,
+      // Seeded EMPTY on purpose: the "Who are you meeting?" list is filled
+      // only by contacts uploaded via CSV, never by placeholder names.
+      team: 'seller', mode: 'offline', contacts: 0,
       name: 'Sumit Ground LOD',
-      goal: 'On-ground field visits — record real conversations with sellers, partners and staff to surface blockers (onboarding, catalog effort, payouts, trust, operations) and auto-bucket them into insights.',
-      cols: [['area','Area'],['segment','Segment'],['monthly_sales','Monthly sales']],
-      data: (i) => ({ area: ['Rajwada','Vijay Nagar','Palasia','Sudama Nagar'][i%4], segment: ['Kirana','Delivery partner','Dark store','Apparel'][i%4], monthly_sales: `₹${40 + (i*7)%120}k` }),
+      goal: 'On-ground field visits — record real conversations with the people you upload, surface blockers (onboarding, catalog effort, payouts, trust, operations) and auto-bucket them into insights.',
+      cols: [],
       tags: ['Onboarding friction','Catalog effort','Payout timing','Trust','Operations','Wants training'],
     },
     {
@@ -451,9 +452,9 @@ export function seedIfEmpty() {
       contacts, createdBy: 'seed',
     });
 
-    // seed calls / field sessions across ~55% of contacts
+    // seed calls / field sessions across ~55% of contacts (never more than exist)
     const n = lod.contacts.length;
-    const called = Math.max(2, Math.round(n * 0.55));
+    const called = Math.min(n, Math.max(2, Math.round(n * 0.55)));
     for (let i = 0; i < called; i++) {
       const c = lod.contacts[i];
       const daysAgo = (i * 2) % 18;
