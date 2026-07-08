@@ -41,10 +41,36 @@ export function renderDashboard(container) {
 
   const todayStr = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  container.innerHTML = `
+  // LOD Live (/u/) gets a proper welcome intro — greeting + guided quick actions.
+  // Field (/s/) keeps its compact header.
+  const intro = isOffline ? `
     <div class="page-header">
       <div><h1>Namaste, ${esc(firstName)}</h1><p class="header-subtitle">${esc(todayStr)} — Listen Or Die. Kaun sunega, aap sunoge.</p></div>
+    </div>` : `
+    <div class="greet" style="margin-bottom:18px">
+      <div>
+        <h1>Namaste, <span class="serif">${esc(firstName)}</span></h1>
+        <p>${esc(V.heroBlurb)} <strong style="color:var(--ink-2)">Kaun sunega? Aap sunoge.</strong></p>
+      </div>
+      <div class="date">${esc(todayStr)}<br>${esc(V.product)} · Listen Or Die</div>
     </div>
+    <div class="quick" style="margin-bottom:22px">
+      <a class="qa" data-go="lods">
+        <div class="qa-ico teal">${icon('upload')}</div>
+        <div><div class="qa-title">Start a LOD</div><div class="qa-sub">Upload a list, get an AI probe stack</div></div>
+      </a>
+      <a class="qa" data-go="calling">
+        <div class="qa-ico coral">${icon('phoneCall')}</div>
+        <div><div class="qa-title">Calling Console</div><div class="qa-sub">Dial users with the live co-pilot</div></div>
+      </a>
+      <a class="qa" data-go="insights">
+        <div class="qa-ico blue">${icon('sparkles')}</div>
+        <div><div class="qa-title">Insights</div><div class="qa-sub">Hear what users are really saying</div></div>
+      </a>
+    </div>`;
+
+  container.innerHTML = `
+    ${intro}
 
     <div class="stats-grid">
       <div class="stat-card">
@@ -118,6 +144,10 @@ export function renderDashboard(container) {
       </div>
     </div>
   `;
+
+  container.querySelectorAll('[data-go]').forEach(el => {
+    el.addEventListener('click', () => navigate(el.dataset.go));
+  });
 
   container.querySelectorAll('[data-call]').forEach(btn => {
     btn.addEventListener('click', () => {
