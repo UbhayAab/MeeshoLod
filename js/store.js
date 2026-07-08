@@ -5,6 +5,8 @@
 // real backend can be dropped in later without touching pages.
 // ============================================================
 
+import { TPC_ROWS } from './data/tpc.js';
+
 const K = {
   users: 'mlod_users',
   teams: 'mlod_teams',
@@ -243,19 +245,12 @@ export function seedIfEmpty() {
   // ---------- LOD blueprints (mode: online = phone; offline = field) ----------
   const BP = [
     {
-      team: 'grocery', mode: 'online', contacts: 16,
-      name: 'High-TPC non-transactors — Nagpur',
-      goal: 'Understand why repeat grocery users have never transacted in High TPC categories (Biscuits, Namkeen, Noodles, Soft Drinks) despite browsing them — surface pricing, brand, pack-size and adoption blockers.',
-      cols: [['od_flag','OD flag'],['days_since_last_order','Days since order'],['last_pdp_l1','Last PDP category']],
-      data: (i) => ({ od_flag: ['4od','5od_and_plus'][i%2], days_since_last_order: String(3 + (i*2)%20), last_pdp_l1: ['Biscuits & Cookies','Rice Products','Noodles & Pasta','Chips, Namkeen & Snacks'][i%4] }),
-      tags: ['Pricing','Small pack requirement','Brand loyal','Rating sensitive','Monthly purchase habit','Competition','Awareness OK','Adoption'],
-      summaries: [
-        'Monthly-grocery habit crowds out category; aware of Meesho availability but no trigger to switch.',
-        'Buys biscuits in small packs at the local shop for the kids; our packs feel too big.',
-        'Uses Mariegold; says biscuits are cheaper on another app so never buys here.',
-        'Abandoned Poha in cart over a low rating — will not buy below ~3.5 stars.',
-        'Brand-loyal to Britannia; would try a cheaper local brand only if reviews are strong.',
-      ],
+      // Flagship LOD — built from the REAL "LOD TPC - Criteria 3" export
+      // (615 real contacts, 13 real logged calls with Hinglish remarks).
+      team: 'grocery', mode: 'online', fromTPC: true,
+      name: 'High-TPC non-transactors — Criteria 3',
+      goal: 'Understand why repeat grocery users have never transacted in High-TPC categories (Biscuits, Namkeen, Noodles, Soft Drinks, Chocolates) despite browsing them — surface pricing, brand affinity, pack-size (UOM) and adoption blockers.',
+      cols: [['od_flag','OD flag'],['days_since_last_order','Days since order'],['last_pdp_l1','Last PDP category'],['last_atc_l1','Last ATC category'],['last_search_l1','Last search category']],
     },
     {
       team: 'grocery', mode: 'online', contacts: 12,
@@ -419,7 +414,7 @@ export function seedIfEmpty() {
   ];
 
   const QUESTION_BANK = {
-    'High-TPC non-transactors — Nagpur': [
+    'High-TPC non-transactors — Criteria 3': [
       ['Current habit','Where do you usually buy biscuits and namkeen — local shop, monthly run, or another app?','What makes that option convenient for you?','How often do you restock these?'],
       ['Pricing','Do our prices for these feel higher, lower, or about the same as where you buy now?','Is there a price at which you would switch to us?'],
       ['Brand & pack','Is there a brand you insist on? Would you try a cheaper local brand?','Do our pack sizes suit you, or do you prefer smaller packs?'],
@@ -461,6 +456,33 @@ export function seedIfEmpty() {
 
   BP.forEach((bp, bi) => {
     const questions = QUESTION_BANK[bp.name] ? themed(QUESTION_BANK[bp.name]) : genericQ(bp.name, bp.goal);
+
+    // Flagship: build from the REAL CSV export (615 contacts + real logged calls)
+    if (bp.fromTPC) {
+      const contacts = TPC_ROWS.map(r => ({
+        id: uid('c'), status: 'pending', attempts: 0,
+        name: r.name || '', phone: r.phone, phones: [r.phone], ext_id: r.ext_id || '', data: r.data || {},
+      }));
+      const lod = saveLod({
+        name: bp.name, teamId: T[bp.team], goal: bp.goal, mode: bp.mode, questions,
+        columns: (bp.cols || []).map(([key, label]) => ({ key, label })),
+        contacts, createdBy: 'seed',
+      });
+      TPC_ROWS.forEach((r, i) => {
+        if (!r.call) return;
+        const c = lod.contacts[i];
+        const connected = !!r.call.connected;
+        saveCall({
+          lodId: lod.id, contactId: c.id, callerId: 'seed', mode: 'online',
+          disposition: connected ? 'connected' : 'rnr', connected,
+          notes: r.call.notes || '', answers: {}, summary: r.call.summary || '', tags: r.call.tags || [],
+          durationSec: connected ? 180 + (i % 8) * 30 : 0, ts: NOW - (i % 20) * DAY,
+        });
+        updateContact(lod.id, c.id, { status: connected ? 'done' : 'pending', attempts: 1 });
+      });
+      return;
+    }
+
     const contacts = mkContacts(bp.contacts, { shops: bp.shops, data: bp.data });
     const lod = saveLod({
       name: bp.name, teamId: T[bp.team], goal: bp.goal, mode: bp.mode,
