@@ -13,6 +13,7 @@ import { seedIfEmpty, ensureDemoUser } from './store.js';
 import { initAuth, isAuthed, login } from './auth.js';
 import { registerRoute, setAuthGuard, initRouter, navigate } from './router.js';
 import { renderSidebar, bindSidebarSync } from './components/sidebar.js';
+import { startTour } from './components/tour.js';
 import { getVariant } from './variant.js';
 
 import { renderLogin } from './pages/login.js';
@@ -71,12 +72,25 @@ function renderAppShell() {
   shellMounted = true;
 }
 
+// First-run tour: kick it once the home page has actually rendered.
+function maybeTour() {
+  let tries = 0;
+  const poll = () => {
+    const onHome = ((window.location.hash || '').slice(1) || V.home).split('/')[0] === V.home;
+    const ready = document.querySelector('#page-content .greet, #page-content .page-header');
+    if (onHome && ready) { startTour(); return; }
+    if (++tries < 20) setTimeout(poll, 150);
+  };
+  setTimeout(poll, 350);
+}
+
 // Called by login page after a successful sign-in
 export function bootAppShell() {
   renderAppShell();
   const hash = (window.location.hash || '').slice(1);
   navigate(!hash || hash === 'login' ? V.home : hash);
   initRouter();
+  maybeTour();
 }
 
 // ---------- Login (full-screen route, replaces shell) ----------
@@ -134,6 +148,7 @@ function init() {
     const hash = (window.location.hash || '').slice(1);
     if (!hash || hash === 'login') window.location.hash = V.home;
     initRouter();
+    maybeTour();
   } catch (err) {
     console.error('Boot error', err);
     document.getElementById('app').innerHTML =

@@ -6,7 +6,7 @@
 
 export const APP_NAME = 'Meesho LOD';
 export const APP_TAG = 'Listen Or Die';
-export const APP_BUILD = '20260708e';
+export const APP_BUILD = '20260709c';
 
 // Default AI gateway (Bifrost buildathon gateway → OpenAI).
 // NOTE: this key lives client-side by design (static GitHub Pages app).
