@@ -327,6 +327,7 @@ function openWizard(container) {
       const qs = await generateQuestions(W.goal, {
         teamName: getTeams().find(t => t.id === W.teamId)?.name || '',
         sampleContact: sample,
+        columns: W.parsed?.columns || [],
       });
       if (qs && qs.length) {
         W.questions = qs.map(q => ({ id: uid('q'), ...q }));

@@ -307,7 +307,7 @@ function renderFlashDeck(flashAnim = false) {
   if (q) {
     html += `
       <div class="flash-card pulse ${flashAnim ? 'flash-in' : ''}" id="flash-main">
-        <div class="flash-eyebrow"><span class="dot"></span> Ask now ${q.type === 'core' ? '· core' : '· probe'}</div>
+        <div class="flash-eyebrow"><span class="dot"></span> Ask now ${q.theme ? '· ' + esc(q.theme) : (q.type === 'core' ? '· core' : '· probe')}</div>
         <div class="flash-q">${esc(q.text)}</div>
         <div class="flash-actions">
           <button class="btn btn-ghost btn-sm" id="flash-next" style="color:#fff; border-color:rgba(255,255,255,.25)">${icon('arrowRight')} Next question</button>
@@ -358,23 +358,49 @@ function startRotation() {
 }
 function stopRotation() { if (rotateHandle) { clearInterval(rotateHandle); rotateHandle = null; } }
 
-// ---------- question stack ----------
+// ---------- question stack (grouped by theme when present) ----------
 function renderQStack() {
   const el = container.querySelector('#qstack');
   if (!el) return;
   const lod = getLod(S.lodId);
-  el.innerHTML = lod.questions.map((q, i) => {
+
+  const qRow = (q, n) => {
     const ans = S.answered[q.id];
     return `
       <div class="qrow ${ans ? 'answered' : ''} ${q.id === S.flashId ? 'up-next' : ''}" data-qid="${q.id}" data-type="${q.type}">
-        <span class="q-ico">${ans ? icon('check') : i + 1}</span>
+        <span class="q-ico">${ans ? icon('check') : n}</span>
         <span style="min-width:0">
           <span class="q-text">${esc(q.text)}</span>
           ${ans ? `<div class="q-ans">↳ ${esc(ans)}</div>` : ''}
         </span>
         <span class="q-type">${q.type}</span>
       </div>`;
-  }).join('');
+  };
+
+  const hasThemes = lod.questions.some(q => q.theme);
+  if (hasThemes) {
+    // group in first-seen theme order; count answered per theme
+    const order = [];
+    const groups = {};
+    lod.questions.forEach(q => {
+      const t = q.theme || 'More questions';
+      if (!groups[t]) { groups[t] = []; order.push(t); }
+      groups[t].push(q);
+    });
+    let n = 0;
+    el.innerHTML = order.map(theme => {
+      const qs = groups[theme];
+      const done = qs.filter(q => S.answered[q.id]).length;
+      return `
+        <div class="qtheme-head">
+          <span>${esc(theme)}</span>
+          <span class="qtheme-count ${done === qs.length ? 'all-done' : ''}">${done}/${qs.length}</span>
+        </div>
+        ${qs.map(q => qRow(q, ++n)).join('')}`;
+    }).join('');
+  } else {
+    el.innerHTML = lod.questions.map((q, i) => qRow(q, i + 1)).join('');
+  }
 
   // tap a question to flash it manually
   el.querySelectorAll('.qrow').forEach(row => {

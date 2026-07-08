@@ -96,6 +96,20 @@
 }
 .qrow[data-type="core"] .q-type { color: var(--primary); }
 
+/* theme divider inside the question stack */
+.qtheme-head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s2);
+  font: var(--t-mono-label); text-transform: uppercase; letter-spacing: .14em;
+  color: var(--gold-deep); padding: var(--s3) 2px var(--s1);
+  border-bottom: 1px solid var(--line); margin-top: var(--s2);
+}
+.qtheme-head:first-child { margin-top: 0; }
+.qtheme-count {
+  font: var(--t-mono-label); color: var(--ink-4); letter-spacing: .06em;
+  background: var(--bg-sunken); border-radius: var(--r-pill); padding: 2px 8px;
+}
+.qtheme-count.all-done { background: var(--ok-soft); color: var(--ok); }
+
 /* ---------- Tag chips ---------- */
 .tagchip {
   display: inline-flex; align-items: center; gap: 5px;

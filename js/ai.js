@@ -141,22 +141,60 @@ Rules:
   return out;
 }
 
-// Goal → question stack for the flasher
-export async function generateQuestions(goal, { teamName = '', sampleContact = null, count = 7 } = {}) {
-  const sys = `You design short, conversational calling-script questions for Meesho's LOD (Listen Or Die) program — ops teams calling real users/sellers/employees to understand one specific goal.
+// Goal → a full themed question plan for the flasher.
+// This is the "brain": it thinks in THEMES (the angles a call must cover),
+// each with a core question and several improvised probes, so a single goal
+// expands into a deep, reusable script that works across many use cases
+// (category / HR / seller ops / support …). Returns a flat, id-less list
+// (caller assigns ids) where every entry carries its theme, and probes sit
+// right after the core question they belong to.
+export async function generateQuestions(goal, { teamName = '', sampleContact = null, columns = [], themeCount = 5, probesPerCore = 3 } = {}) {
+  const colHint = columns.length ? `\nThe uploaded list has these context columns you can reference or probe around: ${columns.map(c => c.label || c.key || c).join(', ')}.` : '';
+  const sys = `You are the question-design brain for Meesho's LOD ("Listen Or Die") program — ops teams phone real users, sellers, delivery partners or employees to deeply understand ONE goal. You turn a goal into a rich, structured call script.
+
+Think in THEMES: the distinct angles a good caller must cover to fully answer the goal (e.g. for "why not buying category X": current buying habit, price perception, brand loyalty, pack size, trust/ratings, delivery, awareness). Pick the themes that actually fit THIS goal and audience — infer whether these are customers, sellers, or employees from the goal/team.
+
+For EACH theme produce:
+- one "core" question (directly gets the key fact for that theme)
+- ${probesPerCore} "probe" follow-ups (dig deeper: causes, comparisons, specifics, emotions, "what would change your mind")
+
 Rules:
-- ${count} questions max. Mix: 2-3 "core" (directly answer the goal) + probes (dig into causes: price, brand, habit, trust, timing, competition...).
-- Questions must be speakable on a phone call in India — simple English, short. No jargon.
-- Reply ONLY JSON: {"questions":[{"text":"...","type":"core"|"probe"}]}`;
-  const user = `Team: ${teamName || 'n/a'}\nGoal: ${goal}\n${sampleContact ? `Example contact context: ${JSON.stringify(sampleContact).slice(0, 800)}` : ''}`;
+- ${themeCount} themes. Every question speakable on an Indian phone call: short, simple, warm, conversational — Hinglish-friendly is fine. No corporate jargon, no compound double-barrel questions.
+- Probes must be genuinely different from their core question and from each other.
+- Reply ONLY JSON:
+{"themes":[{"name":"<short theme label>","core":"<core question>","probes":["<probe1>","<probe2>", ...]}]}`;
+  const user = `Team: ${teamName || 'n/a'}\nGoal: ${goal}${colHint}\n${sampleContact ? `Example contact from the list: ${JSON.stringify(sampleContact).slice(0, 800)}` : ''}`;
   const out = await chatJSON([
     { role: 'system', content: sys },
     { role: 'user', content: user },
-  ], { maxTokens: 1200, temperature: 0.5 });
-  if (!out || !Array.isArray(out.questions)) return null;
-  return out.questions
-    .filter(q => q && q.text)
-    .map(q => ({ text: String(q.text).trim(), type: q.type === 'core' ? 'core' : 'probe' }));
+  ], { maxTokens: 2600, temperature: 0.55 });
+
+  // Accept either the rich themed shape or a plain flat {questions:[...]} fallback
+  const flat = [];
+  if (out && Array.isArray(out.themes)) {
+    for (const t of out.themes) {
+      const theme = String(t?.name || '').trim() || 'General';
+      if (t?.core) flat.push({ text: String(t.core).trim(), type: 'core', theme });
+      if (Array.isArray(t?.probes)) {
+        for (const p of t.probes) {
+          if (p) flat.push({ text: String(p).trim(), type: 'probe', theme });
+        }
+      }
+    }
+  } else if (out && Array.isArray(out.questions)) {
+    for (const q of out.questions) {
+      if (q && q.text) flat.push({ text: String(q.text).trim(), type: q.type === 'core' ? 'core' : 'probe', theme: String(q.theme || '').trim() || 'General' });
+    }
+  }
+  // dedupe by normalized text, keep order
+  const seen = new Set();
+  const deduped = flat.filter(q => {
+    const k = q.text.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!k || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  return deduped.length ? deduped : null;
 }
 
 // THE live loop: caller's running notes → what's been answered,
