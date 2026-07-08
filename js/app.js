@@ -1,14 +1,19 @@
 // ============================================================
 // Meesho LOD — App entry (ES module)
-// Boot chain: init() → seed demo data → initAuth → routes →
-// login gate → app shell → router.
+// Boot chain: variant → seed data → auto-login Ubhay → routes →
+// app shell → router.
+//
+// TWO variants share this one entry (see js/variant.js):
+//   /u/ → LOD Live   (online phone calling, pink)
+//   /s/ → LOD Field  (offline recording + bucketing, indigo)
 // ============================================================
 
 import { APP_BUILD } from './config.js';
-import { seedIfEmpty } from './store.js';
-import { initAuth, isAuthed } from './auth.js';
+import { seedIfEmpty, ensureDemoUser } from './store.js';
+import { initAuth, isAuthed, login } from './auth.js';
 import { registerRoute, setAuthGuard, initRouter, navigate } from './router.js';
 import { renderSidebar, bindSidebarSync } from './components/sidebar.js';
+import { getVariant } from './variant.js';
 
 import { renderLogin } from './pages/login.js';
 import { renderDashboard } from './pages/dashboard.js';
@@ -19,8 +24,11 @@ import { renderCalling } from './pages/calling.js';
 import { renderResults } from './pages/results.js';
 import { renderAdmin } from './pages/admin.js';
 import { renderSettings } from './pages/settings.js';
+import { renderRecord } from './pages/record.js';
+import { renderSessions } from './pages/sessions.js';
 
-console.log(`Meesho LOD build ${APP_BUILD}`);
+const V = getVariant();
+console.log(`Meesho LOD build ${APP_BUILD} · variant ${V.key} (${V.product})`);
 
 // ---------- App shell ----------
 let shellMounted = false;
@@ -65,7 +73,7 @@ function renderAppShell() {
 export function bootAppShell() {
   renderAppShell();
   const hash = (window.location.hash || '').slice(1);
-  navigate(!hash || hash === 'login' ? 'dashboard' : hash);
+  navigate(!hash || hash === 'login' ? V.home : hash);
   initRouter();
 }
 
@@ -80,6 +88,9 @@ function mountLogin() {
 // ---------- Init ----------
 function init() {
   try {
+    // stamp the variant so [data-variant] CSS applies
+    document.documentElement.dataset.variant = V.key;
+
     seedIfEmpty();
     initAuth();
 
@@ -90,24 +101,34 @@ function init() {
     // hash router matches prefixes: '#lods/<id>' resolves to the 'lods'
     // route with params.id — dispatch list vs detail here
     registerRoute('lods', (c, params) => params.id ? renderLodDetail(c, params) : renderLods(c, params));
-    registerRoute('calling', renderCalling);
     registerRoute('results', renderResults);
     registerRoute('admin', renderAdmin);
     registerRoute('settings', renderSettings);
+    // variant-specific
+    registerRoute('calling', renderCalling);   // online (u)
+    registerRoute('record', renderRecord);      // offline (s)
+    registerRoute('sessions', (c, params) => renderSessions(c, params)); // offline (s)
 
     setAuthGuard(() => isAuthed());
+
+    // Demo/buildathon: deep links like /u/#dashboard must just work, so we
+    // auto-provision + sign in "Ubhay" (admin) when there's no session.
+    // Logout still returns to the login screen; signup still works.
+    if (!isAuthed()) {
+      const demo = ensureDemoUser();
+      if (demo) { login(demo.id); initAuth(); }
+    }
 
     if (!isAuthed()) {
       window.location.hash = 'login';
       mountLogin();
-      // still init router so hashchange works after login
       initRouter();
       return;
     }
 
     renderAppShell();
     const hash = (window.location.hash || '').slice(1);
-    if (!hash || hash === 'login') window.location.hash = 'dashboard';
+    if (!hash || hash === 'login') window.location.hash = V.home;
     initRouter();
   } catch (err) {
     console.error('Boot error', err);

@@ -9,16 +9,21 @@ import { dispositionMeta } from '../config.js';
 import { icon } from '../components/icons.js';
 import { navigate } from '../router.js';
 import { esc, timeAgo } from '../utils/format.js';
+import { getVariant } from '../variant.js';
 
 export function renderDashboard(container) {
+  const V = getVariant();
+  const wantMode = V.mode; // 'online' | 'offline'
+  const isOffline = wantMode === 'offline';
   const user = getCurrentUser();
   const firstName = (user?.name || 'there').split(' ')[0];
-  const lods = getLods();
+  const lods = getLods().filter(l => (l.mode || 'online') === wantMode);
   const teams = getTeams();
   const teamName = (id) => teams.find(t => t.id === id)?.name || '—';
 
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-  const allCalls = getCalls();
+  const lodIds = new Set(lods.map(l => l.id));
+  const allCalls = getCalls().filter(c => lodIds.has(c.lodId));
   const todayCalls = allCalls.filter(c => c.ts >= midnight.getTime());
   const connectedToday = todayCalls.filter(c => c.connected).length;
   const connectRate = todayCalls.length ? Math.round(connectedToday / todayCalls.length * 100) : 0;
@@ -79,7 +84,7 @@ export function renderDashboard(container) {
             <div style="display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap">
               <div class="progress-track" style="flex:1; min-width:120px"><div class="progress-fill" style="width:${p.pct}%"></div></div>
               <span class="mono-cell" style="font-size:12px; flex-shrink:0">${p.done}/${p.total}</span>
-              <button class="btn btn-primary btn-sm" data-call="${l.id}">${icon('phoneCall')} Continue calling</button>
+              <button class="btn btn-primary btn-sm" data-call="${l.id}">${icon(isOffline ? 'mic' : 'phoneCall')} ${isOffline ? 'Record session' : 'Continue calling'}</button>
             </div>
           </div>`;
         }).join('') : `
@@ -116,8 +121,8 @@ export function renderDashboard(container) {
 
   container.querySelectorAll('[data-call]').forEach(btn => {
     btn.addEventListener('click', () => {
-      saveSettings({ lastLodId: btn.dataset.call });
-      navigate('calling');
+      if (isOffline) { saveSettings({ fieldLodId: btn.dataset.call }); navigate('record'); }
+      else { saveSettings({ lastLodId: btn.dataset.call }); navigate('calling'); }
     });
   });
 }

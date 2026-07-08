@@ -63,6 +63,42 @@
 }
 .coach-signal svg { width: 15px; height: 15px; flex-shrink: 0; }
 
+/* ---------- Field recorder (offline / variant s) ---------- */
+.rec-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--s5); align-items: start; }
+@media (max-width: 1000px) { .rec-grid { grid-template-columns: 1fr; } }
+
+.recorder { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--s4); padding: var(--s7) var(--s5); }
+.rec-who { display: flex; align-items: center; gap: 12px; align-self: flex-start; }
+.rec-orb {
+  position: relative; width: 116px; height: 116px; border-radius: 50%;
+  border: none; cursor: pointer; color: #fff; display: grid; place-items: center;
+  background: var(--grad-primary); box-shadow: var(--sh-primary-lg);
+  transition: transform var(--fast) var(--ease), filter var(--fast) var(--ease);
+}
+.rec-orb svg { width: 40px; height: 40px; }
+.rec-orb:hover { filter: brightness(1.05); }
+.rec-orb:active { transform: scale(0.97); }
+.rec-orb:disabled { background: var(--bg-sunken); color: var(--ink-4); box-shadow: none; cursor: not-allowed; }
+.rec-orb-ring { position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--primary-soft-2); opacity: 0; }
+.rec-orb.on { background: linear-gradient(180deg, #CC4F42, var(--danger)); box-shadow: 0 2px 6px rgba(188,64,52,.3), 0 16px 34px -8px rgba(188,64,52,.5); }
+.rec-orb.on .rec-orb-ring { opacity: 1; animation: recPulse 1.6s var(--ease) infinite; }
+@keyframes recPulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.4); opacity: 0; } }
+.rec-timer { font-size: 30px; font-weight: 700; letter-spacing: .04em; color: var(--ink); }
+.rec-status { font: var(--t-sm); color: var(--ink-3); max-width: 320px; }
+
+.transcript-box {
+  font: var(--t-body); line-height: 1.7; color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: var(--s4); max-height: 340px; overflow: auto; white-space: pre-wrap;
+}
+
+/* insight buckets */
+.buckets { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.bucket { border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s4); background: var(--surface-2); border-top: 3px solid var(--primary); }
+.bucket-head { font: var(--t-mono-label); text-transform: uppercase; letter-spacing: .12em; color: var(--primary-press); margin-bottom: 8px; }
+.bucket-points { margin: 0; padding-left: 18px; }
+.bucket-points li { font: var(--t-sm); color: var(--ink-2); margin-bottom: 5px; }
+
 /* ---------- Projects (portfolio) ---------- */
 .proj-team { }
 .proj-team-head {

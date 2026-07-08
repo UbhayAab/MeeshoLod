@@ -283,3 +283,80 @@
   --bottom-nav-height: var(--bottomnav-h);
   --content-max-width: 1400px;
 }
+
+/* ============================================================
+   VARIANT "s" — Sumit / LOD Field (offline).
+   Indigo primary + teal accent + deep-indigo night panel, so it
+   reads as a clearly different product from the pink LOD Live.
+   Scoped to [data-variant="s"] on <html>; every token re-themes.
+   ============================================================ */
+:root[data-variant="s"] {
+  --bg: #F5F4FE;
+  --bg-2: #EFEEFB;
+  --bg-sunken: #E7E5F7;
+  --surface: #FFFFFF;
+  --surface-2: #FBFAFF;
+  --surface-3: #F3F1FD;
+  --overlay: rgba(20, 15, 51, 0.55);
+
+  --ink: #1B1830;
+  --ink-2: #4C4763;
+  --ink-3: #857F9E;
+  --ink-4: #B0AAC6;
+  --ink-inv: #F2F0FF;
+
+  --line: #E6E3F5;
+  --line-2: #D6D2ED;
+  --line-strong: #C2BCE0;
+  --hairline: rgba(27, 24, 48, 0.08);
+
+  --panel-deep: #140F33;
+  --panel: #1E1B4B;
+  --panel-2: #272360;
+  --panel-3: #332E78;
+  --panel-line: rgba(238, 235, 255, 0.09);
+  --panel-line-2: rgba(238, 235, 255, 0.18);
+  --panel-text: #EEEBFF;
+  --panel-text-2: #B9B1E6;
+  --panel-text-3: #857BB8;
+
+  --primary: #6D5EF6;
+  --primary-2: #5B4FE0;
+  --primary-hover: #5B4FE0;
+  --primary-press: #4C41C7;
+  --primary-bright: #8577FF;
+  --primary-glow: #A99EFF;
+  --primary-soft: #ECE9FE;
+  --primary-soft-2: #D6CFFB;
+  --primary-tint: rgba(109, 94, 246, 0.08);
+  --on-primary: #FFFFFF;
+
+  /* accent: teal (legacy "gold") */
+  --gold: #0E7C86;
+  --gold-deep: #0A5A62;
+  --gold-bright: #16A3B0;
+  --gold-soft: #D6F0F2;
+  --gold-tint: rgba(14, 124, 134, 0.12);
+
+  --sh-primary: 0 2px 6px rgba(109,94,246,0.20), 0 12px 26px -6px rgba(109,94,246,0.38);
+  --sh-primary-lg: 0 4px 10px rgba(109,94,246,0.22), 0 20px 44px -8px rgba(109,94,246,0.44);
+  --sh-panel: 0 12px 34px -6px rgba(20,15,51,0.42);
+  --sh-gold: 0 2px 6px rgba(14,124,134,0.20), 0 12px 26px -6px rgba(14,124,134,0.34);
+  --ring: 0 0 0 3px rgba(109,94,246,0.22);
+
+  --grad-primary: linear-gradient(180deg, #8577FF 0%, #6D5EF6 58%, #5B4FE0 100%);
+  --grad-primary-hover: linear-gradient(180deg, #9184FF 0%, #7669F8 58%, #6357E6 100%);
+  --grad-sky: linear-gradient(180deg, #16A3B0 0%, #0E7C86 100%);
+  --grad-ink: linear-gradient(160deg, #332E78 0%, #1E1B4B 46%, #140F33 100%);
+  --grad-ink-aurora:
+    radial-gradient(90% 150% at 88% -20%, rgba(109,94,246,0.40), transparent 55%),
+    radial-gradient(70% 130% at -12% 115%, rgba(14,124,134,0.16), transparent 58%),
+    linear-gradient(160deg, #332E78 0%, #1E1B4B 46%, #140F33 100%);
+  --grad-text: linear-gradient(100deg, #6D5EF6, #A99EFF 55%, #6D5EF6);
+  --grad-hairline: linear-gradient(135deg, rgba(109,94,246,0.55), rgba(22,163,176,0.24) 45%, rgba(133,119,255,0.35));
+
+  /* keep semantic + legacy aliases pointed at the new hues */
+  --color-bg-active: var(--primary-soft);
+  --gradient-primary: var(--grad-primary);
+  --shadow-glow: var(--sh-primary);
+}

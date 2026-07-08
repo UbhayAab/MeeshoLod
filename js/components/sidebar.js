@@ -12,29 +12,10 @@ import { confirmModal } from './modal.js';
 import { icon } from './icons.js';
 import { ROLES } from '../config.js';
 import { esc } from '../utils/format.js';
+import { getVariant } from '../variant.js';
 
-const ALL = ['admin', 'lead', 'caller'];
 const MGMT = ['admin', 'lead'];
-
-const NAV_ITEMS = [
-  {
-    section: 'Main',
-    items: [
-      { id: 'dashboard', label: 'Dashboard',       icon: 'grid',      route: 'dashboard', roles: ALL },
-      { id: 'projects',  label: 'Projects',        icon: 'inbox',     route: 'projects',  roles: ALL },
-      { id: 'lods',      label: 'LODs',            icon: 'target',    route: 'lods',      roles: ALL },
-      { id: 'calling',   label: 'Calling Console', icon: 'phoneCall', route: 'calling',   roles: ALL },
-      { id: 'results',   label: 'Results',         icon: 'chart',     route: 'results',   roles: ALL },
-    ],
-  },
-  {
-    section: 'Management',
-    items: [
-      { id: 'admin',    label: 'Teams & Users', icon: 'shieldCheck', route: 'admin',    roles: MGMT },
-      { id: 'settings', label: 'Settings',      icon: 'settings',    route: 'settings', roles: ALL },
-    ],
-  },
-];
+const NAV_ITEMS = getVariant().nav;
 
 const AVATAR_COLORS = ['#F43397', '#7B1264', '#5145C4', '#A21C85', '#C0761C', '#2A63A6'];
 export function avatarColor(name) {
@@ -88,13 +69,14 @@ export function renderSidebar() {
   }).join('');
 
   const team = user?.teamId ? getTeam(user.teamId) : null;
+  const V = getVariant();
 
   sidebar.innerHTML = `
     <div class="sidebar-header">
-      <div class="sidebar-logo">${icon('phoneCall')}</div>
+      <div class="sidebar-logo">${icon(V.mode === 'offline' ? 'mic' : 'phoneCall')}</div>
       <div class="sidebar-brand">
-        <span class="sidebar-brand-name">Meesho LOD</span>
-        <span class="sidebar-brand-sub">Listen Or Die</span>
+        <span class="sidebar-brand-name">${esc(V.brand)}</span>
+        <span class="sidebar-brand-sub">${esc(V.sub)}</span>
       </div>
     </div>
     <nav class="sidebar-nav">
@@ -142,15 +124,10 @@ function renderBottomNav(role, active) {
   const el = document.getElementById('bottom-nav');
   if (!el) return;
 
-  const items = [
-    { id: 'dashboard', label: 'Home',    route: 'dashboard', icon: 'grid' },
-    { id: 'lods',      label: 'LODs',    route: 'lods',      icon: 'target' },
-    { id: 'calling',   label: 'Call',    route: 'calling',   icon: 'phoneCall' },
-    { id: 'results',   label: 'Results', route: 'results',   icon: 'chart' },
-    MGMT.includes(role)
-      ? { id: 'admin',    label: 'Teams',    route: 'admin',    icon: 'shieldCheck' }
-      : { id: 'settings', label: 'Settings', route: 'settings', icon: 'settings' },
-  ];
+  // first (up to) 5 role-visible items from the variant's nav, with short labels
+  const SHORT = { dashboard: 'Home', calling: 'Call', results: 'Results', record: 'Record', sessions: 'Sessions', projects: 'Projects', lods: 'LODs', settings: 'Settings', admin: 'Teams' };
+  const flat = NAV_ITEMS.flatMap(s => s.items).filter(i => i.roles.includes(role));
+  const items = flat.slice(0, 5).map(i => ({ ...i, label: SHORT[i.id] || i.label }));
 
   el.innerHTML = `
     <div class="bottom-nav-list">

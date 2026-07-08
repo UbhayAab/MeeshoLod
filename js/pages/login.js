@@ -11,10 +11,12 @@ import { getUsers } from '../store.js';
 import { avatarColor, getInitials, roleLabel } from '../components/sidebar.js';
 import { showToast } from '../components/toast.js';
 import { icon } from '../components/icons.js';
-import { ROLES, APP_NAME, APP_TAG } from '../config.js';
+import { ROLES } from '../config.js';
 import { esc } from '../utils/format.js';
+import { getVariant } from '../variant.js';
 
 export function renderLogin(container, { onLogin }) {
+  const V = getVariant();
   // mode: 'pick' when profiles exist, else 'signup'
   let mode = hasAnyUsers() ? 'pick' : 'signup';
   let newTeamOpen = false;
@@ -25,24 +27,28 @@ export function renderLogin(container, { onLogin }) {
         <div class="login-split">
           <div class="login-hero">
             <div class="lh-brand">
-              <span class="logo-icon">${icon('phoneCall')}</span>
+              <span class="logo-icon">${icon(V.mode === 'offline' ? 'mic' : 'phoneCall')}</span>
               <div>
-                <div class="lh-word">${esc(APP_NAME)}</div>
-                <div class="lh-tag">${esc(APP_TAG)}</div>
+                <div class="lh-word">${esc(V.brand)}</div>
+                <div class="lh-tag">${esc(V.sub)}</div>
               </div>
             </div>
             <div class="lh-statement">
-              <div class="lh-eyebrow">The operating ritual</div>
-              <h1>Every function, <em>always connected</em> to users.</h1>
-              <p class="lh-sub">Upload a list, get an AI question stack, and call real people — one goal, one conversation at a time.</p>
+              <div class="lh-eyebrow">${V.mode === 'offline' ? 'On the ground' : 'The operating ritual'}</div>
+              <h1>${V.mode === 'offline' ? 'Listen on the ground. <em>Understand</em> by evening.' : 'Every function, <em>always connected</em> to users.'}</h1>
+              <p class="lh-sub">${esc(V.heroBlurb)}</p>
             </div>
             <div class="lh-foot">
               <svg class="lh-ecg" viewBox="0 0 300 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M0 20 H60 L72 20 82 6 94 34 104 20 H150 L162 20 172 4 184 36 194 20 H300" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
+              ${V.mode === 'offline' ? `
+              <div class="lh-mono">Record the real conversation</div>
+              <div class="lh-mono">AI transcribes + buckets it for you</div>
+              <div class="lh-mono">Seller visits · delivery hubs · store audits</div>` : `
               <div class="lh-mono">Calls made, not surveys sent</div>
               <div class="lh-mono">Category · HR · Tech · Seller Ops — same skeleton</div>
-              <div class="lh-mono">AI listens with you on every call</div>
+              <div class="lh-mono">AI listens with you on every call</div>`}
             </div>
           </div>
           <div class="login-card">

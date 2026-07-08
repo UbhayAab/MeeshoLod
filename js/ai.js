@@ -256,6 +256,32 @@ NOTES:\n${notes || '(no notes)'}`;
   };
 }
 
+// OFFLINE (field) — a recorded on-ground conversation → clean insight buckets.
+// This is the heart of the /s/ (LOD Field) surface: transcribe on-device,
+// then this buckets the raw transcript into themes with evidence points.
+export async function bucketTranscript({ goal, transcript, questions = [] }) {
+  const qHint = questions.length ? `\nThe field guide themes to look for: ${[...new Set(questions.map(q => q.theme).filter(Boolean))].join(', ')}.` : '';
+  const sys = `You process an on-ground (offline) LOD conversation for Meesho's Field program. The caller recorded a real in-person conversation (may be Hindi/Hinglish). Turn the raw transcript into clean, structured insight.
+Produce:
+- summary: 2-3 crisp sentences — the WHY / the takeaway, not a retelling.
+- buckets: the 2-5 themes actually present, each with 1-4 short evidence points paraphrased from what was said.
+- tags: 2-5 short reusable theme tags.
+Reply ONLY JSON: {"summary":"...","buckets":[{"theme":"...","points":["...","..."]}],"tags":["..."]}`;
+  const user = `GOAL: ${goal}${qHint}\nTRANSCRIPT:\n${String(transcript || '').slice(0, 12000)}`;
+  const out = await chatJSON([
+    { role: 'system', content: sys },
+    { role: 'user', content: user },
+  ], { maxTokens: 1400, temperature: 0.3 });
+  if (!out) return null;
+  return {
+    summary: String(out.summary || '').trim(),
+    buckets: Array.isArray(out.buckets) ? out.buckets
+      .filter(b => b && b.theme)
+      .map(b => ({ theme: String(b.theme).trim(), points: Array.isArray(b.points) ? b.points.map(p => String(p).trim()).filter(Boolean) : [] })) : [],
+    tags: Array.isArray(out.tags) ? out.tags.map(t => String(t).trim()).filter(Boolean).slice(0, 5) : [],
+  };
+}
+
 // Cross-call synthesis — uses the deep model
 export async function synthesize({ lod, calls }) {
   const cfg = aiConfig();
