@@ -18,6 +18,7 @@ import { renderLodDetail } from './pages/lodDetail.js';
 import { renderCalling } from './pages/calling.js';
 import { renderVoiceUpload } from './pages/voiceUpload.js';
 import { renderResults } from './pages/results.js';
+import { renderInsights } from './pages/insights.js';
 import { renderAdmin } from './pages/admin.js';
 import { renderSettings } from './pages/settings.js';
 
@@ -94,6 +95,7 @@ function init() {
     registerRoute('calling', renderCalling);
     registerRoute('voice-upload', renderVoiceUpload);
     registerRoute('results', renderResults);
+    registerRoute('insights', renderInsights);
     registerRoute('admin', renderAdmin);
     registerRoute('settings', renderSettings);
 

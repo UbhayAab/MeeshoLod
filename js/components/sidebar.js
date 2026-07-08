@@ -26,6 +26,7 @@ const NAV_ITEMS = [
       { id: 'calling',   label: 'Calling Console', icon: 'phoneCall', route: 'calling',   roles: ALL },
       { id: 'voice-upload', label: 'Upload Recordings', icon: 'mic',  route: 'voice-upload', roles: ALL },
       { id: 'results',   label: 'Results',         icon: 'chart',     route: 'results',   roles: ALL },
+      { id: 'insights',  label: 'Insights',        icon: 'activity',  route: 'insights',  roles: ALL },
     ],
   },
   {

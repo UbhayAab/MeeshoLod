@@ -332,4 +332,41 @@ Be specific and quantitative where possible. No fluff.`;
   return text || null;
 }
 
+// Per-question insights across all calls for a LOD — deep model, JSON.
+// For each question we hand the model every one-line answer extracted from
+// the calls that addressed it; it returns a tight insight per question.
+// Returns { [questionId]: "insight" } (only questions that had answers), or null.
+export async function synthesizeByQuestion({ lod, calls }) {
+  const cfg = aiConfig();
+  const questions = lod.questions || [];
+  const perQ = questions.map(q => {
+    const answers = [];
+    for (const c of calls) {
+      const a = (c.answers || {})[q.id];
+      if (a) {
+        const contact = lod.contacts.find(x => x.id === c.contactId) || {};
+        answers.push({
+          who: contact.name || c.customerLabel || contact.ext_id || contact.phone || '?',
+          answer: String(a).slice(0, 300),
+        });
+      }
+    }
+    return { id: q.id, question: q.text, answers };
+  }).filter(q => q.answers.length);
+
+  if (!perQ.length) return {};
+
+  const sys = `You are the insights analyst for Meesho's LOD ("Listen Or Die") calling program. For EACH question you are given the one-line answers extracted from every call that addressed it. Write a tight insight per question:
+- the dominant pattern (be quantitative — how many said what),
+- notable variation or outliers,
+- 2-4 sentences, sharp, no fluff, do NOT restate the question.
+Reply ONLY JSON: {"insights":{"<question id>":"<insight>"}}`;
+  const user = `GOAL: ${lod.goal}\nTEAM: ${lod.name}\nQUESTIONS + ANSWERS:\n${JSON.stringify(perQ).slice(0, 24000)}`;
+  const out = await chatJSON([
+    { role: 'system', content: sys },
+    { role: 'user', content: user },
+  ], { model: cfg.deepModel, maxTokens: 4000 });
+  return (out && out.insights && typeof out.insights === 'object') ? out.insights : null;
+}
+
 export { chat as aiChat, chatJSON as aiChatJSON };

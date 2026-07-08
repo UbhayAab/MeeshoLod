@@ -272,6 +272,26 @@
 }
 .ans-chip b { color: var(--ok); flex-shrink: 0; }
 
+/* ---------- Insights (per-question rollup) ---------- */
+.in-insight {
+  background: var(--primary-tint);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+  border-radius: var(--r-md);
+  padding: var(--s3) var(--s4);
+  margin-bottom: var(--s3);
+}
+.in-insight-eyebrow {
+  font: var(--t-mono-label); text-transform: uppercase; letter-spacing: .12em;
+  color: var(--primary-press); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+}
+.in-insight-eyebrow svg { width: 14px; height: 14px; }
+.in-insight p { font: var(--t-sm); color: var(--ink); line-height: 1.55; }
+.in-answers summary {
+  cursor: pointer; font: var(--t-mono-label); text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-3); padding: 4px 0;
+}
+.in-answers summary:hover { color: var(--primary-press); }
+
 /* ---------- Misc ---------- */
 .goal-banner {
   padding: var(--s4) var(--s5);
