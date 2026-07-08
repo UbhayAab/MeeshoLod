@@ -162,8 +162,15 @@ function openWizard(container) {
     const ai = aiStatus();
     body.innerHTML = `
       <div class="form-group">
-        <label class="form-label">Paste your list — straight from Sheets / CSV / anywhere</label>
-        <textarea class="paste-zone" id="w-raw" placeholder="Paste rows with headers (meesho_user_id, phone_number, name, any metric columns…) — or just names and numbers. Messy is fine.">${esc(W.raw)}</textarea>
+        <label class="form-label" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap">
+          <span>Paste your list — or upload a CSV / TSV</span>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer; margin:0">
+            ${icon('upload')} Upload CSV
+            <input type="file" id="w-file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" style="display:none" />
+          </label>
+        </label>
+        <textarea class="paste-zone" id="w-raw" placeholder="Paste rows with headers (meesho_user_id, phone_number, name, any metric columns…) — or just names and numbers. Or hit Upload CSV. Messy is fine.">${esc(W.raw)}</textarea>
+        <p class="hint" id="w-file-name" style="margin-top:6px; display:none"></p>
       </div>
       <div class="parse-tally" id="w-tally"></div>
       <div id="w-preview"></div>
@@ -222,6 +229,23 @@ function openWizard(container) {
     };
     rawEl.addEventListener('input', recompute);
     if (W.raw.trim() && !W.parsed) recompute(); else renderPreview();
+
+    // CSV / TSV file upload → drop text into the paste zone and parse
+    body.querySelector('#w-file')?.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (file.size > 8 * 1024 * 1024) { showToast('File too large (max 8 MB)', 'warning'); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        rawEl.value = String(reader.result || '');
+        recompute();
+        const nameEl = body.querySelector('#w-file-name');
+        if (nameEl) { nameEl.style.display = ''; nameEl.textContent = `Loaded ${file.name} · ${(file.size / 1024).toFixed(0)} KB`; }
+        showToast(`Loaded ${file.name}`, 'success');
+      };
+      reader.onerror = () => showToast('Could not read that file', 'error');
+      reader.readAsText(file);
+    });
 
     body.querySelector('#w-ai-parse')?.addEventListener('click', async (e) => {
       const btn = e.currentTarget;

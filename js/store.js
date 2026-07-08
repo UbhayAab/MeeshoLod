@@ -362,6 +362,60 @@ export function seedIfEmpty() {
       data: (i) => ({ views_30d: String(10 + (i*5)%40), top_l2: ['Cases','Chargers','Earphones','Cables'][i%4], cart: String(i%4) }),
       tags: ['Warranty doubt','Unbranded trust','Pricing','Delivery time','Quality fear'],
     },
+    {
+      team: 'fashion', mode: 'online', contacts: 14,
+      name: 'First-order-only buyers — no repeat',
+      goal: 'Understand why one-time fashion buyers never placed a second order — sizing letdown, delivery time, price vs expectation, or simply forgot — and what triggers a repeat.',
+      cols: [['first_order','First order'],['days_since','Days since'],['first_l2','Bought']],
+      data: (i) => ({ first_order: '1', days_since: String(40 + (i*6)%120), first_l2: ['Kurti','Saree','Top','Dupatta'][i%4] }),
+      tags: ['Sizing letdown','Forgot','Delivery time','Price expectation','One-off gift'],
+      summaries: [
+        'Kurti ran small vs the size chart; lost confidence to reorder.',
+        'Bought once as a gift; not a personal-use category for them.',
+        'Happy with product but simply forgot — a nudge/offer would bring them back.',
+      ],
+    },
+    {
+      team: 'wellness', mode: 'online', contacts: 12,
+      name: 'Repeat-medicine lapsers',
+      goal: 'Call chronic-care users who stopped reordering monthly medicines — price, moved to local chemist, doctor changed prescription, or delivery reliability.',
+      cols: [['condition','Care type'],['last_refill','Last refill'],['months_lapsed','Months lapsed']],
+      data: (i) => ({ condition: ['Diabetes','BP','Thyroid','Cardiac'][i%4], last_refill: '1', months_lapsed: String(1 + i%4) }),
+      tags: ['Price','Local chemist','Prescription change','Delivery reliability','Reminder needed'],
+      summaries: [
+        'Switched to the neighbourhood chemist for convenience and instant availability.',
+        'Doctor changed the prescription; our reorder no longer matched.',
+        'Would continue if we sent a monthly refill reminder + small loyalty price.',
+      ],
+    },
+    {
+      team: 'logistics', mode: 'online', contacts: 12,
+      name: 'High-RTO pincodes — buyer intent check',
+      goal: 'Call buyers in high-RTO pincodes who refused COD delivery to understand why — changed mind, expected different product, address/timing issues, or prepaid distrust.',
+      cols: [['pincode','Pincode'],['rto_reason','Marked reason'],['orders','Orders']],
+      data: (i) => ({ pincode: ['452001','440010','431001','422002'][i%4], rto_reason: ['Not available','Changed mind','Wrong item feared','Address issue'][i%4], orders: String(1 + i%5) }),
+      tags: ['Not available at delivery','Changed mind','Expectation gap','Address/timing','COD habit'],
+      summaries: [
+        'Was not home at delivery time; wants a delivery-slot choice.',
+        'Got cold feet on quality since it was unbranded — prepaid felt risky.',
+      ],
+    },
+    {
+      team: 'support', mode: 'offline', contacts: 8,
+      name: 'Return-pickup rider ride-alongs',
+      goal: 'Ride along with return-pickup riders and record the on-ground friction — customer disputes at door, packaging checks, app steps, and time lost per pickup.',
+      cols: [['zone','Zone'],['pickups_day','Pickups/day'],['tenure_m','Tenure (mo)']],
+      data: (i) => ({ zone: ['North','South','East','West'][i%4], pickups_day: String(12 + (i*3)%20), tenure_m: String(2 + (i*4)%20) }),
+      tags: ['Door disputes','Packaging check','App steps','Time lost','Safety'],
+    },
+    {
+      team: 'fashion', mode: 'offline', contacts: 8, shops: true,
+      name: 'Boutique supplier ground visits — Surat',
+      goal: 'In-person visits to Surat textile suppliers on catalog quality, MOQ, dispatch SLA, and what stops them scaling on Meesho — recorded and bucketed.',
+      cols: [['cluster','Cluster'],['category','Category'],['looms','Looms']],
+      data: (i) => ({ cluster: ['Ring Road','Sahara Darwaja','Salabatpura'][i%3], category: ['Sarees','Dress material','Dupattas'][i%3], looms: String(4 + (i*3)%30) }),
+      tags: ['Catalog quality','MOQ','Dispatch SLA','Working capital','Wants scale'],
+    },
   ];
 
   const QUESTION_BANK = {
