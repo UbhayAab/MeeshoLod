@@ -359,38 +359,40 @@ Be specific and quantitative where possible. No fluff.`;
 }
 
 // Per-question insights across all calls for a LOD — deep model, JSON.
-// For each question we hand the model every one-line answer extracted from
-// the calls that addressed it; it clusters them into a few response buckets
-// and COUNTS how many customers fall in each (e.g. "5 disliked pricing").
+// We hand the model the question stack plus ONE record per call — its
+// pre-extracted per-question answers if present, otherwise the call's
+// summary + notes/transcript. It works out where each customer stands on
+// each question, clusters them into a few buckets, and COUNTS how many
+// fall in each (e.g. "5 disliked pricing"). This is robust to calls that
+// never had per-question answers extracted (seeded data, field recordings).
 // Returns { [questionId]: { takeaway, breakdown:[{label,count}] } }, or null.
 export async function synthesizeByQuestion({ lod, calls }) {
   const cfg = aiConfig();
-  const questions = lod.questions || [];
-  const perQ = questions.map(q => {
-    const answers = [];
-    for (const c of calls) {
-      const a = (c.answers || {})[q.id];
-      if (a) {
-        const contact = lod.contacts.find(x => x.id === c.contactId) || {};
-        answers.push({
-          who: contact.name || c.customerLabel || contact.ext_id || contact.phone || '?',
-          answer: String(a).slice(0, 300),
-        });
-      }
-    }
-    return { id: q.id, question: q.text, count: answers.length, answers };
-  }).filter(q => q.answers.length);
+  const questions = (lod.questions || []).map(q => ({ id: q.id, question: q.text }));
+  if (!questions.length) return {};
 
-  if (!perQ.length) return {};
+  // one record per call, from whatever it captured
+  const rows = [];
+  for (const c of calls) {
+    if (c.connected === false) continue; // RNR / busy / wrong number — nothing was said
+    const contact = lod.contacts.find(x => x.id === c.contactId) || {};
+    const who = contact.name || c.customerLabel || contact.ext_id || contact.phone || '?';
+    const answers = (c.answers && Object.keys(c.answers).length) ? c.answers : null;
+    const summary = String(c.summary || '').slice(0, 400);
+    const notes = String(c.transcript || c.notes || '').slice(0, 700);
+    if (answers || summary || notes) rows.push({ who, answers, summary, notes });
+  }
+  if (!rows.length) return {};
 
-  const sys = `You are the insights analyst for Meesho's LOD ("Listen Or Die") calling program. For EACH question you are given the one-line answers from every call that addressed it. Cluster those answers into a SMALL set of distinct response buckets and COUNT how many customers fall in each.
+  const sys = `You are the insights analyst for Meesho's LOD ("Listen Or Die") calling program. You are given the calling GOAL, the QUESTIONS in the stack, and one RECORD per customer call — its per-question answers if captured, otherwise a summary and notes/transcript.
+For EACH question, work out where each customer stands, then cluster them into a SMALL set of response buckets and COUNT how many customers fall in each.
 Rules:
-- 2-5 buckets per question. Every answer maps to exactly ONE bucket; the bucket counts MUST sum to that question's answer count.
-- Bucket labels are short and phrased as a stance on the question in the customers' own framing (e.g. for "did you not like the pricing?": "Found pricing too high", "Pricing was fine"; for "did you find the assortment?": "Could not find what they wanted", "Found it").
-- Order buckets by count, largest first.
-- Also give a one-line takeaway per question.
+- 2-5 buckets per question. A customer counts toward a question ONLY if their record actually speaks to it — do not force everyone into every question, and per-question counts must not exceed the number of customers.
+- Bucket labels are short and phrased as a stance on the question in the customers' framing (e.g. for "did you not like the pricing?": "Found pricing too high", "Pricing was fine"; for "did you find the assortment?": "Could not find what they wanted", "Found it").
+- Order buckets by count, largest first. Add a one-line takeaway per question.
+- Omit a question entirely if no customer's record addresses it.
 Reply ONLY JSON: {"insights":{"<question id>":{"takeaway":"<one line>","breakdown":[{"label":"<bucket>","count":<int>}]}}}`;
-  const user = `GOAL: ${lod.goal}\nTEAM: ${lod.name}\nQUESTIONS + ANSWERS (count = customers who answered):\n${JSON.stringify(perQ).slice(0, 24000)}`;
+  const user = `GOAL: ${lod.goal}\nTEAM: ${lod.name}\nQUESTIONS:\n${JSON.stringify(questions)}\nCUSTOMER RECORDS (${rows.length}):\n${JSON.stringify(rows).slice(0, 24000)}`;
   const out = await chatJSON([
     { role: 'system', content: sys },
     { role: 'user', content: user },

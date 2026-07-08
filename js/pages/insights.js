@@ -96,8 +96,9 @@ export function renderInsights(container) {
       return { q, answers };
     });
 
-    const answeredQs = perQ.filter(x => x.answers.length).length;
     const hasInsights = Object.keys(cached).length > 0;
+    // customers actually spoken to — the denominator for "N of M customers"
+    const connectedCount = calls.filter(c => c.connected).length || calls.length;
 
     // AI insight block: a counted breakdown of how customers answered
     const renderInsightBlock = (insight, total) => {
@@ -134,9 +135,12 @@ export function renderInsights(container) {
     const cardFor = ({ q, answers }) => {
       n++;
       const insight = cached[q.id];
+      // how many customers this question's insight covers (bucket sum), else raw answers
+      const bd = (insight && typeof insight === 'object' && Array.isArray(insight.breakdown)) ? insight.breakdown : [];
+      const responded = bd.length ? bd.reduce((s, b) => s + (b.count || 0), 0) : answers.length;
       const answersHtml = answers.length ? `
-        <details class="in-answers" ${answers.length <= 4 ? 'open' : ''}>
-          <summary>${answers.length} answer${answers.length === 1 ? '' : 's'}</summary>
+        <details class="in-answers">
+          <summary>${answers.length} extracted answer${answers.length === 1 ? '' : 's'}</summary>
           <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px">
             ${answers.map(a => `
               <div class="ans-chip">
@@ -145,16 +149,16 @@ export function renderInsights(container) {
               </div>`).join('')}
           </div>
         </details>`
-        : `<p class="hint" style="margin-top:8px">No answers captured for this question yet.</p>`;
+        : (insight ? '' : `<p class="hint" style="margin-top:8px">No response captured for this question yet — hit Generate AI insights.</p>`);
 
       return `
         <div class="card card-pad" style="margin-bottom:14px">
           <div class="eyebrow" style="margin-bottom:8px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap">
             <span>Q${n} · ${esc(q.type)}${q.theme ? ' · ' + esc(q.theme) : ''}</span>
-            <span style="color:var(--ink-4)">${answers.length}/${calls.length} answered</span>
+            <span style="color:var(--ink-4)">${responded}/${connectedCount} customers</span>
           </div>
           <div style="font:var(--t-body-strong); margin-bottom:10px">${esc(q.text)}</div>
-          ${renderInsightBlock(insight, answers.length)}
+          ${renderInsightBlock(insight, connectedCount)}
           ${answersHtml}
         </div>`;
     };
@@ -181,7 +185,7 @@ export function renderInsights(container) {
       <div class="stats-grid" style="margin-bottom:18px">
         <div class="stat-card"><div class="stat-ico">${icon('phoneCall')}</div><div class="stat-num">${calls.length}</div><div class="stat-lbl">Calls logged</div></div>
         <div class="stat-card"><div class="stat-ico">${icon('message')}</div><div class="stat-num">${questions.length}</div><div class="stat-lbl">Questions</div></div>
-        <div class="stat-card"><div class="stat-ico">${icon('checkCircle')}</div><div class="stat-num">${answeredQs}/${questions.length}</div><div class="stat-lbl">With answers</div></div>
+        <div class="stat-card"><div class="stat-ico">${icon('checkCircle')}</div><div class="stat-num">${connectedCount}</div><div class="stat-lbl">Customers spoken to</div></div>
         <div class="stat-card"><div class="stat-ico">${icon('sparkles')}</div><div class="stat-num" style="font-size:15px">${hasInsights ? (cachedTs ? esc(fmtDate(cachedTs)) : 'Ready') : '—'}</div><div class="stat-lbl">AI insights</div></div>
       </div>
 
