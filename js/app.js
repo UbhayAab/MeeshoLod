@@ -12,6 +12,7 @@ import { renderSidebar, bindSidebarSync } from './components/sidebar.js';
 
 import { renderLogin } from './pages/login.js';
 import { renderDashboard } from './pages/dashboard.js';
+import { renderProjects } from './pages/projects.js';
 import { renderLods } from './pages/lods.js';
 import { renderLodDetail } from './pages/lodDetail.js';
 import { renderCalling } from './pages/calling.js';
@@ -85,6 +86,7 @@ function init() {
     // Routes — handlers receive (container, params)
     registerRoute('login', () => mountLogin(), { requiresAuth: false });
     registerRoute('dashboard', renderDashboard);
+    registerRoute('projects', renderProjects);
     // hash router matches prefixes: '#lods/<id>' resolves to the 'lods'
     // route with params.id — dispatch list vs detail here
     registerRoute('lods', (c, params) => params.id ? renderLodDetail(c, params) : renderLods(c, params));

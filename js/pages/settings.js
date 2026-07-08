@@ -36,7 +36,7 @@ export function renderSettings(container) {
       <div><h1>Settings</h1><p class="header-subtitle">Profile, AI engine and your data — all local to this browser</p></div>
     </div>
 
-    <div class="content-grid" style="display:grid; gap:16px; max-width:820px">
+    <div style="display:flex; flex-direction:column; gap:16px; max-width:820px">
 
       <!-- Profile -->
       <div class="card card-pad">

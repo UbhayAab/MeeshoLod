@@ -21,6 +21,7 @@ const NAV_ITEMS = [
     section: 'Main',
     items: [
       { id: 'dashboard', label: 'Dashboard',       icon: 'grid',      route: 'dashboard', roles: ALL },
+      { id: 'projects',  label: 'Projects',        icon: 'inbox',     route: 'projects',  roles: ALL },
       { id: 'lods',      label: 'LODs',            icon: 'target',    route: 'lods',      roles: ALL },
       { id: 'calling',   label: 'Calling Console', icon: 'phoneCall', route: 'calling',   roles: ALL },
       { id: 'results',   label: 'Results',         icon: 'chart',     route: 'results',   roles: ALL },

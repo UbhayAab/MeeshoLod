@@ -235,8 +235,21 @@ export function seedIfEmpty() {
   });
   updateContact(demo.id, c0.id, { status: 'done', attempts: 1 });
 
+  // a couple more grocery calls so Results/Projects look worked-in
+  const gc1 = demo.contacts[1], gc2 = demo.contacts[4];
+  saveCall({ lodId: demo.id, contactId: gc1.id, callerId: 'seed', disposition: 'connected', connected: true,
+    notes: 'Buys cream biscuits from the local shop in small packs whenever her kid asks. Searched Poha, added to cart, did not order because rating looked low.',
+    answers: {}, summary: 'Small-pack + impulse buying at local shop; abandoned Poha over low rating. Pack size and ratings are the blockers.',
+    tags: ['Small pack requirement', 'Rating sensitive'], durationSec: 208 });
+  updateContact(demo.id, gc1.id, { status: 'done', attempts: 1 });
+  saveCall({ lodId: demo.id, contactId: gc2.id, callerId: 'seed', disposition: 'connected', connected: true,
+    notes: 'Uses Mariegold biscuits. Says biscuits are cheaper on another app so never buys from here. No noodles/soft drinks at home.',
+    answers: {}, summary: 'Pure pricing gap on biscuits vs a competing app; no demand for noodles/soft drinks.',
+    tags: ['Pricing', 'Competition'], durationSec: 151 });
+  updateContact(demo.id, gc2.id, { status: 'done', attempts: 1 });
+
   // ---------- Use-case 2: HR employee pulse (themed questions) ----------
-  saveLod({
+  const hrLod = saveLod({
     name: 'Warehouse attrition pulse — Bhiwandi',
     teamId: hr.id,
     goal: 'Understand why fulfilment-centre associates are resigning within 90 days — pay, shift load, manager relationship, growth, and whether a counter-offer would retain them.',
@@ -265,8 +278,29 @@ export function seedIfEmpty() {
     createdBy: 'seed',
   });
 
+  // HR calls
+  const hc = hrLod.contacts;
+  saveCall({ lodId: hrLod.id, contactId: hc[0].id, callerId: 'seed', disposition: 'connected', connected: true,
+    notes: 'Night shifts were 12 hours instead of the 9 promised, and overtime pay was delayed by weeks. Supervisor was okay but he could not raise issues comfortably. Would have stayed if shifts were fixed at 9h.',
+    answers: {}, summary: 'Shift-length mismatch (12h vs 9h) + delayed OT pay drove exit; retainable if shifts fixed. Manager approachability weak.',
+    tags: ['Shift load', 'Overtime pay', 'Retainable'], durationSec: 286 });
+  updateContact(hrLod.id, hc[0].id, { status: 'done', attempts: 1 });
+  saveCall({ lodId: hrLod.id, contactId: hc[1].id, callerId: 'seed', disposition: 'connected', connected: true,
+    notes: 'Left for a job closer to home — commute was 1.5 hours each way. Pay and shifts were fine, no complaints about the team.',
+    answers: {}, summary: 'Commute distance (3h round trip) was the sole driver; comp and management were fine. Not a pay/manager problem.',
+    tags: ['Commute', 'Not pay-related'], durationSec: 188 });
+  updateContact(hrLod.id, hc[1].id, { status: 'done', attempts: 1 });
+  saveCall({ lodId: hrLod.id, contactId: hc[2].id, callerId: 'seed', disposition: 'rnr', connected: false,
+    notes: 'No answer — will retry.', answers: {}, summary: '', tags: [], durationSec: 0 });
+  updateContact(hrLod.id, hc[2].id, { status: 'pending', attempts: 1 });
+  saveCall({ lodId: hrLod.id, contactId: hc[3].id, callerId: 'seed', disposition: 'connected', connected: true,
+    notes: 'Felt disrespected by the shift supervisor; repeated conflict. Said a counter-offer would not have changed her mind.',
+    answers: {}, summary: 'Manager relationship breakdown; not retainable by pay. Signals a supervisor-behaviour issue at this FC.',
+    tags: ['Manager relationship', 'Not retainable'], durationSec: 242 });
+  updateContact(hrLod.id, hc[3].id, { status: 'done', attempts: 1 });
+
   // ---------- Use-case 3: Seller ops reactivation (themed questions) ----------
-  saveLod({
+  const sellerLod = saveLod({
     name: 'Dropped-off sellers — reactivation',
     teamId: seller.id,
     goal: 'Find out why previously active sellers stopped listing/dispatching in the last 30 days — inventory, returns/RTO pain, payment cycle, pricing pressure, or competition — and what would bring them back.',
@@ -292,6 +326,22 @@ export function seedIfEmpty() {
     ],
     createdBy: 'seed',
   });
+
+  // Seller calls
+  const sc = sellerLod.contacts;
+  saveCall({ lodId: sellerLod.id, contactId: sc[0].id, callerId: 'seed', disposition: 'connected', connected: true,
+    notes: 'RTO around 34% wiped out margins and the return deductions felt unfair. Shifted most listings to another platform. Would come back if RTO protection improved.',
+    answers: {}, summary: 'High RTO (34%) + perceived-unfair deductions pushed them to a competitor; reactivation hinges on RTO protection.',
+    tags: ['RTO pain', 'Deductions', 'Competition'], durationSec: 324 });
+  updateContact(sellerLod.id, sc[0].id, { status: 'done', attempts: 1 });
+  saveCall({ lodId: sellerLod.id, contactId: sc[1].id, callerId: 'seed', disposition: 'connected', connected: true,
+    notes: 'Settlement was taking ~15 days which hurt cash flow, and pricing pressure squeezed margins. Would dispatch again with a faster payment cycle.',
+    answers: {}, summary: 'Slow ~15-day settlement + pricing pressure; retainable with faster payouts. Cash-flow, not demand, is the blocker.',
+    tags: ['Payment cycle', 'Pricing'], durationSec: 261 });
+  updateContact(sellerLod.id, sc[1].id, { status: 'done', attempts: 1 });
+  saveCall({ lodId: sellerLod.id, contactId: sc[2].id, callerId: 'seed', disposition: 'busy', connected: false,
+    notes: 'Line busy — retry later.', answers: {}, summary: '', tags: [], durationSec: 0 });
+  updateContact(sellerLod.id, sc[2].id, { status: 'pending', attempts: 1 });
 
   write(K.seeded, true);
 }

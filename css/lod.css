@@ -63,6 +63,17 @@
 }
 .coach-signal svg { width: 15px; height: 15px; flex-shrink: 0; }
 
+/* ---------- Projects (portfolio) ---------- */
+.proj-team { }
+.proj-team-head {
+  display: flex; align-items: center; gap: var(--s3);
+  padding-bottom: var(--s3); margin-bottom: var(--s3);
+  border-bottom: 1px solid var(--line);
+}
+.proj-team-head .avatar { width: 38px; height: 38px; flex-shrink: 0; font-size: 13px; }
+.proj-team-name { font: var(--t-h3); }
+.proj-team-meta { font: var(--t-mono-label); text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); margin-top: 3px; }
+
 /* ---------- Live voice bar ---------- */
 .voice-bar {
   display: flex; align-items: stretch; gap: var(--s3);

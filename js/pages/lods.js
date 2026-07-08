@@ -31,7 +31,7 @@ export function renderLods(container) {
     </div>
 
     ${lods.length ? `
-    <div class="content-grid" style="display:grid; gap:14px">
+    <div style="display:flex; flex-direction:column; gap:14px">
       ${lods.map(l => {
         const p = lodProgress(l);
         const calls = getCalls({ lodId: l.id });
