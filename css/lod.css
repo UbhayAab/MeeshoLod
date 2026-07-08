@@ -292,6 +292,21 @@
 }
 .in-answers summary:hover { color: var(--primary-press); }
 
+/* counted breakdown ("5 found pricing too high") */
+.in-breakdown { display: flex; flex-direction: column; gap: 9px; margin-top: var(--s2); }
+.in-bd-row { display: flex; align-items: center; gap: 10px; }
+.in-bd-count {
+  flex-shrink: 0; min-width: 34px; text-align: center;
+  font: var(--t-body-strong); color: var(--primary-press);
+  background: var(--surface); border-radius: var(--r-pill); padding: 2px 10px;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.in-bd-main { flex: 1; min-width: 0; }
+.in-bd-label { font: var(--t-sm); color: var(--ink); }
+.in-bd-bar { height: 6px; border-radius: 4px; background: var(--bg-sunken); overflow: hidden; margin-top: 5px; }
+.in-bd-bar span { display: block; height: 100%; background: var(--grad-primary); border-radius: 4px; }
+.in-bd-pct { flex-shrink: 0; font: var(--t-xs); color: var(--ink-4); min-width: 34px; text-align: right; }
+
 /* ---------- Misc ---------- */
 .goal-banner {
   padding: var(--s4) var(--s5);

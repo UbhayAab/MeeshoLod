@@ -99,6 +99,35 @@ export function renderInsights(container) {
     const answeredQs = perQ.filter(x => x.answers.length).length;
     const hasInsights = Object.keys(cached).length > 0;
 
+    // AI insight block: a counted breakdown of how customers answered
+    const renderInsightBlock = (insight, total) => {
+      if (!insight) return '';
+      // back-compat: an earlier version cached a plain prose string
+      const takeaway = typeof insight === 'string' ? insight : (insight.takeaway || '');
+      const breakdown = (insight && typeof insight === 'object' && Array.isArray(insight.breakdown)) ? insight.breakdown : [];
+      if (!takeaway && !breakdown.length) return '';
+      const max = breakdown.reduce((m, b) => Math.max(m, b.count || 0), 0) || 1;
+      return `
+        <div class="in-insight">
+          <div class="in-insight-eyebrow">${icon('sparkles')} AI insight</div>
+          ${takeaway ? `<p>${esc(takeaway)}</p>` : ''}
+          ${breakdown.length ? `<div class="in-breakdown">
+            ${breakdown.map(b => {
+              const pct = total ? Math.round((b.count / total) * 100) : 0;
+              return `
+                <div class="in-bd-row">
+                  <span class="in-bd-count" title="${b.count} of ${total} customers">${b.count}</span>
+                  <div class="in-bd-main">
+                    <div class="in-bd-label">${esc(b.label)}</div>
+                    <div class="in-bd-bar"><span style="width:${Math.round((b.count / max) * 100)}%"></span></div>
+                  </div>
+                  <span class="in-bd-pct">${pct}%</span>
+                </div>`;
+            }).join('')}
+          </div>` : ''}
+        </div>`;
+    };
+
     // group by theme when the stack uses themes (same convention as the calling console)
     const useThemes = questions.some(q => q.theme);
     let n = 0;
@@ -125,11 +154,7 @@ export function renderInsights(container) {
             <span style="color:var(--ink-4)">${answers.length}/${calls.length} answered</span>
           </div>
           <div style="font:var(--t-body-strong); margin-bottom:10px">${esc(q.text)}</div>
-          ${insight ? `
-            <div class="in-insight">
-              <div class="in-insight-eyebrow">${icon('sparkles')} AI insight</div>
-              <p>${esc(insight)}</p>
-            </div>` : ''}
+          ${renderInsightBlock(insight, answers.length)}
           ${answersHtml}
         </div>`;
     };
@@ -160,7 +185,7 @@ export function renderInsights(container) {
         <div class="stat-card"><div class="stat-ico">${icon('sparkles')}</div><div class="stat-num" style="font-size:15px">${hasInsights ? (cachedTs ? esc(fmtDate(cachedTs)) : 'Ready') : '—'}</div><div class="stat-lbl">AI insights</div></div>
       </div>
 
-      ${!hasInsights ? `<p class="hint" style="margin:-4px 0 14px">Answers are grouped per question below. Hit <strong>Generate AI insights</strong> to synthesize what customers said for each one.</p>` : ''}
+      ${!hasInsights ? `<p class="hint" style="margin:-4px 0 14px">Answers are grouped per question below. Hit <strong>Generate AI insights</strong> to see, per question, how many customers said what (e.g. “5 found pricing too high”).</p>` : ''}
 
       ${cardsHtml}`;
   }

@@ -334,8 +334,9 @@ Be specific and quantitative where possible. No fluff.`;
 
 // Per-question insights across all calls for a LOD — deep model, JSON.
 // For each question we hand the model every one-line answer extracted from
-// the calls that addressed it; it returns a tight insight per question.
-// Returns { [questionId]: "insight" } (only questions that had answers), or null.
+// the calls that addressed it; it clusters them into a few response buckets
+// and COUNTS how many customers fall in each (e.g. "5 disliked pricing").
+// Returns { [questionId]: { takeaway, breakdown:[{label,count}] } }, or null.
 export async function synthesizeByQuestion({ lod, calls }) {
   const cfg = aiConfig();
   const questions = lod.questions || [];
@@ -351,22 +352,39 @@ export async function synthesizeByQuestion({ lod, calls }) {
         });
       }
     }
-    return { id: q.id, question: q.text, answers };
+    return { id: q.id, question: q.text, count: answers.length, answers };
   }).filter(q => q.answers.length);
 
   if (!perQ.length) return {};
 
-  const sys = `You are the insights analyst for Meesho's LOD ("Listen Or Die") calling program. For EACH question you are given the one-line answers extracted from every call that addressed it. Write a tight insight per question:
-- the dominant pattern (be quantitative — how many said what),
-- notable variation or outliers,
-- 2-4 sentences, sharp, no fluff, do NOT restate the question.
-Reply ONLY JSON: {"insights":{"<question id>":"<insight>"}}`;
-  const user = `GOAL: ${lod.goal}\nTEAM: ${lod.name}\nQUESTIONS + ANSWERS:\n${JSON.stringify(perQ).slice(0, 24000)}`;
+  const sys = `You are the insights analyst for Meesho's LOD ("Listen Or Die") calling program. For EACH question you are given the one-line answers from every call that addressed it. Cluster those answers into a SMALL set of distinct response buckets and COUNT how many customers fall in each.
+Rules:
+- 2-5 buckets per question. Every answer maps to exactly ONE bucket; the bucket counts MUST sum to that question's answer count.
+- Bucket labels are short and phrased as a stance on the question in the customers' own framing (e.g. for "did you not like the pricing?": "Found pricing too high", "Pricing was fine"; for "did you find the assortment?": "Could not find what they wanted", "Found it").
+- Order buckets by count, largest first.
+- Also give a one-line takeaway per question.
+Reply ONLY JSON: {"insights":{"<question id>":{"takeaway":"<one line>","breakdown":[{"label":"<bucket>","count":<int>}]}}}`;
+  const user = `GOAL: ${lod.goal}\nTEAM: ${lod.name}\nQUESTIONS + ANSWERS (count = customers who answered):\n${JSON.stringify(perQ).slice(0, 24000)}`;
   const out = await chatJSON([
     { role: 'system', content: sys },
     { role: 'user', content: user },
   ], { model: cfg.deepModel, maxTokens: 4000 });
-  return (out && out.insights && typeof out.insights === 'object') ? out.insights : null;
+  if (!out || !out.insights || typeof out.insights !== 'object') return null;
+
+  // normalize: coerce counts to ints, drop empty buckets, keep only real entries
+  const res = {};
+  for (const [qid, v] of Object.entries(out.insights)) {
+    if (!v) continue;
+    const breakdown = Array.isArray(v.breakdown)
+      ? v.breakdown
+          .map(b => ({ label: String(b?.label || '').trim(), count: Math.max(0, parseInt(b?.count, 10) || 0) }))
+          .filter(b => b.label && b.count > 0)
+          .sort((a, b) => b.count - a.count)
+      : [];
+    const takeaway = String(v.takeaway || '').trim();
+    if (takeaway || breakdown.length) res[qid] = { takeaway, breakdown };
+  }
+  return res;
 }
 
 export { chat as aiChat, chatJSON as aiChatJSON };
