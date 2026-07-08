@@ -24,6 +24,7 @@ const NAV_ITEMS = [
       { id: 'projects',  label: 'Projects',        icon: 'inbox',     route: 'projects',  roles: ALL },
       { id: 'lods',      label: 'LODs',            icon: 'target',    route: 'lods',      roles: ALL },
       { id: 'calling',   label: 'Calling Console', icon: 'phoneCall', route: 'calling',   roles: ALL },
+      { id: 'voice-upload', label: 'Upload Recordings', icon: 'mic',  route: 'voice-upload', roles: ALL },
       { id: 'results',   label: 'Results',         icon: 'chart',     route: 'results',   roles: ALL },
     ],
   },

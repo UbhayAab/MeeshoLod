@@ -16,6 +16,7 @@ import { renderProjects } from './pages/projects.js';
 import { renderLods } from './pages/lods.js';
 import { renderLodDetail } from './pages/lodDetail.js';
 import { renderCalling } from './pages/calling.js';
+import { renderVoiceUpload } from './pages/voiceUpload.js';
 import { renderResults } from './pages/results.js';
 import { renderAdmin } from './pages/admin.js';
 import { renderSettings } from './pages/settings.js';
@@ -91,6 +92,7 @@ function init() {
     // route with params.id — dispatch list vs detail here
     registerRoute('lods', (c, params) => params.id ? renderLodDetail(c, params) : renderLods(c, params));
     registerRoute('calling', renderCalling);
+    registerRoute('voice-upload', renderVoiceUpload);
     registerRoute('results', renderResults);
     registerRoute('admin', renderAdmin);
     registerRoute('settings', renderSettings);

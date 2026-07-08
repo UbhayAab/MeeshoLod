@@ -92,6 +92,11 @@ export function renderSettings(container) {
             <p class="hint" style="margin-top:6px">Heavy model — synthesis reports.</p>
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Transcription model</label>
+          <input class="input" id="st-ai-whisper" value="${esc(ai.whisperModel || '')}" placeholder="whisper-1" style="max-width:260px" />
+          <p class="hint" style="margin-top:6px">Used by Upload Recordings — same endpoint/key, posted to <code>/audio/transcriptions</code>.</p>
+        </div>
         <div style="display:flex; gap:10px; margin-top:6px; flex-wrap:wrap">
           <button class="btn btn-primary" id="st-ai-save">${icon('check')} Save AI settings</button>
           <button class="btn btn-secondary" id="st-ai-test">${icon('zap')} Test connection</button>
@@ -136,6 +141,7 @@ export function renderSettings(container) {
     aiApiKey: keyInput.value.trim(),
     aiModel: container.querySelector('#st-ai-model').value.trim(),
     aiDeepModel: container.querySelector('#st-ai-deep').value.trim(),
+    aiWhisperModel: container.querySelector('#st-ai-whisper').value.trim(),
   });
 
   container.querySelector('#st-ai-save')?.addEventListener('click', () => {

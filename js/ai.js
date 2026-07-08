@@ -19,7 +19,13 @@ function aiConfig() {
     apiKey: s.aiApiKey || AI_DEFAULTS.apiKey,
     model: s.aiModel || AI_DEFAULTS.model,
     deepModel: s.aiDeepModel || AI_DEFAULTS.deepModel,
+    whisperModel: s.aiWhisperModel || AI_DEFAULTS.whisperModel,
   };
+}
+
+// Same gateway/host as chat, OpenAI-compatible audio path.
+function transcribeEndpoint(chatEndpoint) {
+  return chatEndpoint.replace(/\/chat\/completions\/?$/, '/audio/transcriptions');
 }
 
 export function aiStatus() {
@@ -77,6 +83,49 @@ async function chat(messages, { model, json = false, maxTokens = 1200, temperatu
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content ?? '';
   return content;
+}
+
+// Audio file → transcript text, via the same gateway/key as chat.
+// Slower and heavier than a chat call, so it gets its own generous timeout
+// and is NOT routed through chat() — it's multipart, not JSON.
+const TRANSCRIBE_TIMEOUT_MS = 120000;
+
+export async function transcribeAudio(file, { signal } = {}) {
+  const cfg = aiConfig();
+  const url = transcribeEndpoint(cfg.endpoint);
+
+  const form = new FormData();
+  form.append('file', file, file.name || 'audio.webm');
+  form.append('model', cfg.whisperModel);
+  form.append('response_format', 'json');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TRANSCRIBE_TIMEOUT_MS);
+  if (signal) signal.addEventListener('abort', () => controller.abort(), { once: true });
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      // no Content-Type — the browser sets the multipart boundary itself
+      headers: { 'Authorization': `Bearer ${cfg.apiKey}` },
+      body: form,
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(`Transcription timed out after ${Math.round(TRANSCRIBE_TIMEOUT_MS / 1000)}s`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Transcription ${res.status}: ${text.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const text = String(data?.text || data?.transcript || '').trim();
+  if (!text) throw new Error('Empty transcript returned');
+  return text;
 }
 
 function extractJSON(text) {
