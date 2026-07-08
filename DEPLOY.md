@@ -1,7 +1,27 @@
 # Deploy — Meesho LOD (buildathon)
 
 This is a static site. The included `Dockerfile` packages it behind nginx on **:8080**
-and serves `/`, `/u/`, and `/s/`. It's already been built and smoke-tested locally.
+and serves `/`, `/u/`, and `/s/`. Built and smoke-tested locally.
+
+## ✅ Image already built + pushed to the buildathon registry
+
+```
+registry.buildathon.meesho.dev/hackathon/meesho-lod:latest
+```
+(confirmed in the registry — tag list + manifest return 200). So the only step left is
+the **one portal click** below, which needs YOUR logged-in browser (Meesho SSO) — that's
+the single thing that can't be done from the CLI:
+
+1. Open **https://buildathon.ltl.sh** (or **buildathon.meesho.dev**) and log in.
+2. Find the app / image `hackathon/meesho-lod` and click **Deploy Live**.
+3. Wait ~1–2 min → your live URL appears. If it doesn't, confirm you're logged in and
+   click **Deploy Live** once more.
+
+To re-push after future changes: `docker build -t registry.buildathon.meesho.dev/hackathon/meesho-lod:latest . && docker push registry.buildathon.meesho.dev/hackathon/meesho-lod:latest`
+(already logged in as `hackathon`).
+
+---
+## Reference: the full buildathon skill flow
 
 ## Recommended: the buildathon skill (does everything, incl. the portal)
 
