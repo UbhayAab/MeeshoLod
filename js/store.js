@@ -187,8 +187,8 @@ export function seedIfEmpty() {
   if (getTeams().length || getLods().length) { write(K.seeded, true); return; }
 
   const grocery = saveTeam({ name: 'Grocery — Category', desc: 'Meesho Grocery category team' });
-  saveTeam({ name: 'HR', desc: 'People team — employee pulse calls' });
-  saveTeam({ name: 'Seller Ops', desc: 'Seller-side calling' });
+  const hr = saveTeam({ name: 'HR', desc: 'People team — employee pulse calls' });
+  const seller = saveTeam({ name: 'Seller Ops', desc: 'Seller-side calling' });
 
   const demo = saveLod({
     name: 'High-TPC non-transactors — Nagpur',
@@ -234,5 +234,64 @@ export function seedIfEmpty() {
     durationSec: 312,
   });
   updateContact(demo.id, c0.id, { status: 'done', attempts: 1 });
+
+  // ---------- Use-case 2: HR employee pulse (themed questions) ----------
+  saveLod({
+    name: 'Warehouse attrition pulse — Bhiwandi',
+    teamId: hr.id,
+    goal: 'Understand why fulfilment-centre associates are resigning within 90 days — pay, shift load, manager relationship, growth, and whether a counter-offer would retain them.',
+    questions: [
+      { id: uid('q'), type: 'core', theme: 'Reason for leaving', text: 'What is the main reason you decided to leave?' },
+      { id: uid('q'), type: 'probe', theme: 'Reason for leaving', text: 'Was it one big thing or several small ones adding up?' },
+      { id: uid('q'), type: 'probe', theme: 'Reason for leaving', text: 'When did you first start thinking about leaving?' },
+      { id: uid('q'), type: 'core', theme: 'Pay & shifts', text: 'Was the pay and shift schedule what you expected when you joined?' },
+      { id: uid('q'), type: 'probe', theme: 'Pay & shifts', text: 'How many hours were you actually doing versus what was promised?' },
+      { id: uid('q'), type: 'probe', theme: 'Pay & shifts', text: 'Did overtime get paid correctly and on time?' },
+      { id: uid('q'), type: 'core', theme: 'Manager & team', text: 'How was your relationship with your supervisor?' },
+      { id: uid('q'), type: 'probe', theme: 'Manager & team', text: 'Did you feel comfortable raising problems with them?' },
+      { id: uid('q'), type: 'core', theme: 'Retention', text: 'Is there anything we could have done to make you stay?' },
+      { id: uid('q'), type: 'probe', theme: 'Retention', text: 'If we fixed that, would you consider coming back?' },
+    ],
+    columns: [
+      { key: 'tenure_days', label: 'Tenure (days)' }, { key: 'shift', label: 'Shift' },
+      { key: 'center', label: 'FC' }, { key: 'last_working_day', label: 'LWD' },
+    ],
+    contacts: [
+      { id: uid('c'), status: 'pending', attempts: 0, name: 'Suresh Yadav', phone: '9823011223', phones: ['9823011223'], ext_id: 'EMP20481', data: { tenure_days: '54', shift: 'Night', center: 'Bhiwandi-2', last_working_day: '2026-06-30' } },
+      { id: uid('c'), status: 'pending', attempts: 0, name: 'Pooja Nikam', phone: '9765443210', phones: ['9765443210'], ext_id: 'EMP20512', data: { tenure_days: '71', shift: 'Day', center: 'Bhiwandi-1', last_working_day: '2026-07-02' } },
+      { id: uid('c'), status: 'pending', attempts: 0, name: 'Imran Shaikh', phone: '9004567781', phones: ['9004567781'], ext_id: 'EMP20533', data: { tenure_days: '38', shift: 'Night', center: 'Bhiwandi-2', last_working_day: '2026-07-05' } },
+      { id: uid('c'), status: 'pending', attempts: 0, name: 'Rekha More', phone: '9922113344', phones: ['9922113344'], ext_id: 'EMP20560', data: { tenure_days: '83', shift: 'Day', center: 'Bhiwandi-1', last_working_day: '2026-07-06' } },
+    ],
+    createdBy: 'seed',
+  });
+
+  // ---------- Use-case 3: Seller ops reactivation (themed questions) ----------
+  saveLod({
+    name: 'Dropped-off sellers — reactivation',
+    teamId: seller.id,
+    goal: 'Find out why previously active sellers stopped listing/dispatching in the last 30 days — inventory, returns/RTO pain, payment cycle, pricing pressure, or competition — and what would bring them back.',
+    questions: [
+      { id: uid('q'), type: 'core', theme: 'Why they stopped', text: 'We noticed you paused selling recently — what happened?' },
+      { id: uid('q'), type: 'probe', theme: 'Why they stopped', text: 'Was it a business reason or an issue with the platform?' },
+      { id: uid('q'), type: 'core', theme: 'Returns & RTO', text: 'How big a problem were returns and RTO for you?' },
+      { id: uid('q'), type: 'probe', theme: 'Returns & RTO', text: 'Roughly what percent of orders were coming back?' },
+      { id: uid('q'), type: 'probe', theme: 'Returns & RTO', text: 'Did return-related deductions feel fair to you?' },
+      { id: uid('q'), type: 'core', theme: 'Payments', text: 'Were payment timelines working for your cash flow?' },
+      { id: uid('q'), type: 'probe', theme: 'Payments', text: 'How many days was the settlement actually taking?' },
+      { id: uid('q'), type: 'core', theme: 'Competition', text: 'Are you selling more on another platform now? Which one and why?' },
+      { id: uid('q'), type: 'core', theme: 'Comeback', text: 'What one change would make you start dispatching with us again?' },
+    ],
+    columns: [
+      { key: 'gmv_last_month', label: 'GMV last month' }, { key: 'rto_pct', label: 'RTO %' },
+      { key: 'category', label: 'Category' }, { key: 'days_inactive', label: 'Days inactive' },
+    ],
+    contacts: [
+      { id: uid('c'), status: 'pending', attempts: 0, name: 'Sunrise Textiles', phone: '9811002200', phones: ['9811002200'], ext_id: 'SLR88213', data: { gmv_last_month: '0', rto_pct: '34%', category: 'Sarees', days_inactive: '41' } },
+      { id: uid('c'), status: 'pending', attempts: 0, name: 'Verma Handloom', phone: '9871223344', phones: ['9871223344'], ext_id: 'SLR88240', data: { gmv_last_month: '0', rto_pct: '28%', category: 'Kurtis', days_inactive: '33' } },
+      { id: uid('c'), status: 'pending', attempts: 0, name: 'KrishnaTraders', phone: '9333445566', phones: ['9333445566'], ext_id: 'SLR88301', data: { gmv_last_month: '0', rto_pct: '19%', category: 'Home Furnishing', days_inactive: '52' } },
+    ],
+    createdBy: 'seed',
+  });
+
   write(K.seeded, true);
 }

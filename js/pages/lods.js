@@ -169,9 +169,10 @@ function openWizard(container) {
       <div id="w-preview"></div>
       <div class="form-actions" style="display:flex; justify-content:space-between; gap:10px; margin-top:18px; flex-wrap:wrap">
         <button class="btn btn-ghost" id="w-back2">${icon('arrowLeft')} Back</button>
-        <div style="display:flex; gap:10px">
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
           <button class="btn btn-secondary" id="w-ai-parse" ${ai.configured ? '' : 'disabled title="Configure AI in Settings"'}>${icon('sparkles')} AI clean-up parse</button>
-          <button class="btn btn-primary" id="w-next2" disabled>Continue ${icon('arrowRight')}</button>
+          <button class="btn btn-gold" id="w-express" disabled ${ai.configured ? '' : 'title="Configure AI in Settings"'}>${icon('zap')} Auto-build &amp; launch</button>
+          <button class="btn btn-primary" id="w-next2" disabled>Review questions ${icon('arrowRight')}</button>
         </div>
       </div>`;
 
@@ -179,12 +180,14 @@ function openWizard(container) {
     const tallyEl = body.querySelector('#w-tally');
     const prevEl = body.querySelector('#w-preview');
     const nextBtn = body.querySelector('#w-next2');
+    const expressBtn = body.querySelector('#w-express');
 
     const renderPreview = () => {
       if (!W.parsed || !W.parsed.rows.length) {
         tallyEl.innerHTML = W.raw.trim() ? `<span class="bad">No valid phone numbers found yet</span>` : '';
         prevEl.innerHTML = '';
         nextBtn.disabled = true;
+        if (expressBtn) expressBtn.disabled = true;
         return;
       }
       const { rows, invalid, dup, columns } = W.parsed;
@@ -208,6 +211,7 @@ function openWizard(container) {
         </div>
         ${rows.length > 6 ? `<p class="hint" style="margin-top:6px">…and ${rows.length - 6} more</p>` : ''}`;
       nextBtn.disabled = false;
+      if (expressBtn) expressBtn.disabled = !aiStatus().configured;
     };
 
     const recompute = () => {
@@ -253,6 +257,20 @@ function openWizard(container) {
       W.step = 3; render();
       if (!W.questions.length) autoQuestions();
     });
+
+    // Express: AI writes the whole question stack and launches in one tap
+    expressBtn?.addEventListener('click', async () => {
+      if (!W.parsed || !W.parsed.rows.length) return;
+      expressBtn.disabled = true; nextBtn.disabled = true;
+      expressBtn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2.5px"></span> Building script…';
+      await autoQuestions(true);
+      if (W.questions.length) {
+        doLaunch();
+      } else {
+        showToast('Could not auto-build — review questions manually', 'warning');
+        W.step = 3; render();
+      }
+    });
   }
 
   // ---------- Step 3: question stack ----------
@@ -278,14 +296,31 @@ function openWizard(container) {
     const renderList = () => {
       const el = body.querySelector('#w-qlist');
       if (!el) return;
-      el.innerHTML = W.questions.length ? W.questions.map((q, i) => `
+      if (!W.questions.length) {
+        el.innerHTML = `<p class="hint">No questions yet — generate with AI or add manually.</p>`;
+        return;
+      }
+      const qRow = (q, i) => `
         <div class="qrow" data-type="${q.type}" data-i="${i}" style="cursor:default">
           <span class="q-ico">${i + 1}</span>
           <span class="q-text" style="flex:1">${esc(q.text)}</span>
           <span class="q-type">${q.type}</span>
           <button class="btn btn-ghost btn-sm" data-del="${i}" title="Remove" style="padding:2px 8px">${icon('x')}</button>
-        </div>`).join('')
-        : `<p class="hint">No questions yet — generate with AI or add manually.</p>`;
+        </div>`;
+      const hasThemes = W.questions.some(q => q.theme);
+      if (hasThemes) {
+        const order = [], groups = {};
+        W.questions.forEach((q, i) => {
+          const t = q.theme || 'More questions';
+          if (!groups[t]) { groups[t] = []; order.push(t); }
+          groups[t].push(i);
+        });
+        el.innerHTML = order.map(theme => `
+          <div class="qtheme-head"><span>${esc(theme)}</span><span class="qtheme-count">${groups[theme].length}</span></div>
+          ${groups[theme].map(i => qRow(W.questions[i], i)).join('')}`).join('');
+      } else {
+        el.innerHTML = W.questions.map((q, i) => qRow(q, i)).join('');
+      }
       el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
         W.questions.splice(Number(b.dataset.del), 1);
         renderList();
@@ -365,24 +400,27 @@ function openWizard(container) {
       </div>`;
 
     body.querySelector('#w-back4')?.addEventListener('click', () => { W.step = 3; render(); });
-    body.querySelector('#w-launch')?.addEventListener('click', () => {
-      const user = getCurrentUser();
-      const lod = saveLod({
-        name: W.name, teamId: W.teamId, goal: W.goal,
-        questions: W.questions,
-        columns: W.parsed.columns || [],
-        contacts: W.parsed.rows.map(r => ({
-          id: uid('c'), status: 'pending', attempts: 0,
-          name: r.name || '', phone: r.phone, phones: r.phones && r.phones.length ? r.phones : [r.phone],
-          ext_id: r.ext_id || '', data: r.data || {},
-        })),
-        createdBy: user?.id || null,
-      });
-      closeModal();
-      overlayHost.remove();
-      showToast('LOD launched — go listen', 'success');
-      navigate(`lods/${lod.id}`);
+    body.querySelector('#w-launch')?.addEventListener('click', () => doLaunch());
+  }
+
+  // shared launch — used by step 4 and by express launch on step 2
+  function doLaunch() {
+    const user = getCurrentUser();
+    const lod = saveLod({
+      name: W.name, teamId: W.teamId, goal: W.goal,
+      questions: W.questions,
+      columns: W.parsed.columns || [],
+      contacts: W.parsed.rows.map(r => ({
+        id: uid('c'), status: 'pending', attempts: 0,
+        name: r.name || '', phone: r.phone, phones: r.phones && r.phones.length ? r.phones : [r.phone],
+        ext_id: r.ext_id || '', data: r.data || {},
+      })),
+      createdBy: user?.id || null,
     });
+    closeModal();
+    overlayHost.remove();
+    showToast(`LOD launched with ${W.questions.length} questions — go listen`, 'success');
+    navigate(`lods/${lod.id}`);
   }
 }
 
