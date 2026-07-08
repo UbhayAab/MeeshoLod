@@ -63,6 +63,54 @@
 }
 .coach-signal svg { width: 15px; height: 15px; flex-shrink: 0; }
 
+/* ---------- Live voice bar ---------- */
+.voice-bar {
+  display: flex; align-items: stretch; gap: var(--s3);
+  padding: var(--s3); border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--line);
+  transition: border-color var(--base) var(--ease), box-shadow var(--base) var(--ease);
+}
+.voice-bar.listening {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 12%, transparent);
+}
+.voice-btn {
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 9px 15px; border-radius: var(--r-pill);
+  font: var(--t-body-strong); cursor: pointer;
+  color: var(--on-primary); border: 1px solid transparent;
+  background: var(--grad-primary); box-shadow: var(--sh-primary);
+  transition: transform var(--fast) var(--ease), filter var(--fast) var(--ease);
+}
+.voice-btn:hover { filter: brightness(1.04); }
+.voice-btn:active { transform: translateY(1px); }
+.voice-btn:disabled { background: var(--bg-sunken); color: var(--ink-4); box-shadow: none; cursor: not-allowed; }
+.voice-btn .voice-ico { display: inline-flex; }
+.voice-btn .voice-ico svg { width: 17px; height: 17px; }
+.voice-btn.listening {
+  background: linear-gradient(180deg, #CC4F42, var(--danger));
+  box-shadow: 0 2px 6px rgba(188,64,52,0.25), 0 10px 22px -6px rgba(188,64,52,0.4);
+  animation: voicePulse 1.8s var(--ease) infinite;
+}
+@keyframes voicePulse {
+  0%,100% { box-shadow: 0 2px 6px rgba(188,64,52,0.25), 0 0 0 0 rgba(188,64,52,0.5); }
+  60% { box-shadow: 0 2px 6px rgba(188,64,52,0.25), 0 0 0 10px rgba(188,64,52,0); }
+}
+.voice-live {
+  display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;
+  font: var(--t-sm);
+}
+.voice-hint { color: var(--ink-3); font: var(--t-xs); line-height: 1.4; }
+.voice-transcript {
+  color: var(--ink); font-style: italic;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.voice-dot {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  background: var(--danger); box-shadow: 0 0 0 3px rgba(188,64,52,0.2);
+  animation: flashDot 1.2s ease-in-out infinite;
+}
+
 /* AI thinking shimmer */
 .ai-thinking {
   display: inline-flex; align-items: center; gap: 8px;

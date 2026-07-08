@@ -9,7 +9,7 @@ LOD is Meesho's discipline of talking to real users, sellers and employees — c
 1. **Any team onboards itself** — Category, HR, Tech, Seller Ops… create a team, create a LOD (one goal + one list). Skeleton role-based access: Admin / Team Lead / Caller.
 2. **Paste your list, however messy** — CSV/TSV/Sheets paste. A deterministic parser handles clean data instantly (header synonyms, Indian phone normalization, multi-number cells, dedupe); the **AI clean-up parse** handles the messy rest and names your context columns.
 3. **AI writes the question stack** from your goal — 2-3 core questions + probing follow-ups, all editable.
-4. **The calling console** — contacts load one by one (conveyor belt). Tap-to-call, wall-clock timer that survives reloads, full contact context. While you type rough notes, the AI:
+4. **The calling console** — contacts load one by one (conveyor belt). Tap-to-call, wall-clock timer that survives reloads, full contact context. **🎙️ Live listen** transcribes the call in real time (browser Web Speech API — put the call on speakerphone so the mic hears both sides; no key, no audio upload) and streams it straight into the brain, so probes keep flashing as the conversation unfolds. Or just type — while you do, the AI:
    - ticks off questions it detects answers for,
    - **flashes the next best question** on the big card,
    - improvises sharp follow-up probes reacting to what the user just said,

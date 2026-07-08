@@ -21,6 +21,7 @@ import { navigate } from '../router.js';
 import { DISPOSITIONS } from '../config.js';
 import { esc, fmtDuration, timeAgo } from '../utils/format.js';
 import { formatPhone } from '../utils/parse.js';
+import { isVoiceSupported, createVoiceSession } from '../voice.js';
 
 // ---------- module state (one active call at a time) ----------
 let S = null; // { lodId, contact, notes, disposition, answered:{qid:ans}, flashIdx, improvised, timer... }
@@ -31,6 +32,8 @@ let coachInFlight = false;
 let lastCoachedNotes = '';
 let rotateHandle = null;
 let submitting = false;
+let voice = null;       // live voice session (Web Speech API)
+let voiceOn = false;    // user toggled live listen on
 
 function blankState(lodId, contact) {
   return {
@@ -232,6 +235,18 @@ function mountActive() {
 
       <!-- RIGHT: the co-pilot + log form -->
       <div class="logform">
+        <div class="voice-bar" id="voice-bar">
+          <button class="voice-btn" id="voice-toggle" ${isVoiceSupported() ? '' : 'disabled'}>
+            <span class="voice-ico">${icon('mic')}</span>
+            <span id="voice-btn-label">${isVoiceSupported() ? 'Live listen' : 'Voice not supported'}</span>
+          </button>
+          <div class="voice-live" id="voice-live">
+            <span class="voice-hint">${isVoiceSupported()
+              ? 'Put the call on speakerphone — I\'ll transcribe both sides live and keep flashing probes.'
+              : 'Live listen needs Chrome or Edge. You can still type notes and get probes.'}</span>
+          </div>
+        </div>
+
         <div class="flash-deck" id="flash-deck"></div>
 
         <div class="card card-pad" style="margin-top:14px">
@@ -243,8 +258,8 @@ function mountActive() {
         </div>
 
         <div class="card card-pad" style="margin-top:14px">
-          <div class="eyebrow" style="margin-bottom:10px">Call notes — type while you listen</div>
-          <textarea class="notes-area" id="notes" placeholder="Rough notes are fine — the AI reads them live, ticks off answered questions and flashes what to ask next…">${esc(S.notes)}</textarea>
+          <div class="eyebrow" style="margin-bottom:10px">Call notes — type, or let Live listen fill this</div>
+          <textarea class="notes-area" id="notes" placeholder="Type rough notes, or hit Live listen — the AI reads them live, ticks off answered questions and flashes what to ask next…">${esc(S.notes)}</textarea>
           <div class="tagrow" id="live-answers" style="margin-top:10px"></div>
         </div>
 
@@ -269,8 +284,11 @@ function mountActive() {
   renderQStack();
   renderLiveAnswers();
   bindActiveEvents();
+  bindVoice();
   if (S.timerRunning) startTick();
   startRotation();
+  // if listening was on for the previous contact, keep the UI honest
+  reflectVoiceState(voiceOn);
 }
 
 // ---------- flash deck (the flashing questions) ----------
@@ -501,6 +519,100 @@ function bindActiveEvents() {
   });
 }
 
+// ---------- live voice (Web Speech API → notes → coach → probes) ----------
+let interimText = '';
+
+function reflectVoiceState(on) {
+  const btn = container?.querySelector('#voice-toggle');
+  const label = container?.querySelector('#voice-btn-label');
+  const bar = container?.querySelector('#voice-bar');
+  if (!btn || !bar) return;
+  btn.classList.toggle('listening', !!on);
+  bar.classList.toggle('listening', !!on);
+  if (label) label.textContent = on ? 'Listening — tap to stop' : (isVoiceSupported() ? 'Live listen' : 'Voice not supported');
+  if (!on) renderInterim('');
+}
+
+function renderInterim(text) {
+  const live = container?.querySelector('#voice-live');
+  if (!live) return;
+  if (voiceOn) {
+    live.innerHTML = text
+      ? `<span class="voice-dot"></span><span class="voice-transcript">${esc(text)}</span>`
+      : `<span class="voice-dot"></span><span class="voice-hint">Listening… speak or put the call on speaker.</span>`;
+  } else {
+    live.innerHTML = `<span class="voice-hint">${isVoiceSupported()
+      ? 'Put the call on speakerphone — I\'ll transcribe both sides live and keep flashing probes.'
+      : 'Live listen needs Chrome or Edge. You can still type notes and get probes.'}</span>`;
+  }
+}
+
+// a recognized final phrase → append to notes, re-render, run the coach fast
+function handleVoiceFinal(text) {
+  if (!S || !text) return;
+  const notesEl = container?.querySelector('#notes');
+  const sep = S.notes && !/\s$/.test(S.notes) ? ' ' : '';
+  S.notes = (S.notes || '') + sep + text;
+  if (notesEl) { notesEl.value = S.notes; notesEl.scrollTop = notesEl.scrollHeight; }
+  interimText = '';
+  renderInterim('');
+  persistSoon();
+  // snappier than typing debounce — the caller wants probes to keep coming
+  scheduleCoach(1400);
+}
+
+function bindVoice() {
+  interimText = '';
+  const btn = container.querySelector('#voice-toggle');
+  if (!btn) return;
+  if (!isVoiceSupported()) { btn.disabled = true; return; }
+
+  btn.addEventListener('click', async () => {
+    if (voiceOn) { stopVoice(); return; }
+    // (re)create a session bound to the current handlers
+    voice = createVoiceSession({
+      lang: 'en-IN',
+      onInterim: (t) => { interimText = t; renderInterim(t); },
+      onFinal: (t) => handleVoiceFinal(t),
+      onStateChange: (running) => {
+        // recognizer ended for good (not our stop, not an auto-restart)
+        if (!running && voiceOn) {
+          voiceOn = false; voice = null;
+          reflectVoiceState(false);
+        }
+      },
+      onError: (code) => {
+        if (code === 'not-allowed' || code === 'service-not-allowed' || code === 'audio-capture') {
+          voiceOn = false; voice = null;
+          reflectVoiceState(false);
+          showToast('Microphone blocked — allow mic access to use Live listen', 'error');
+        } else if (code === 'network') {
+          showToast('Speech service network hiccup — retrying', 'warning');
+        }
+      },
+    });
+    if (!voice) { showToast('Live listen needs Chrome or Edge', 'warning'); return; }
+    const ok = await voice.start();
+    if (ok) {
+      voiceOn = true;
+      reflectVoiceState(true);
+      startTimer(); persist(); // listening implies the call is live
+      showToast('Listening live — speak or put the call on speaker', 'success');
+    } else {
+      voiceOn = false; voice = null;
+      reflectVoiceState(false);
+    }
+  });
+}
+
+function stopVoice() {
+  voiceOn = false;
+  try { voice && voice.stop(); } catch (_) { /* noop */ }
+  voice = null;
+  interimText = '';
+  reflectVoiceState(false);
+}
+
 // ---------- timer (wall-clock anchored — survives reloads) ----------
 function startTimer() {
   if (S.timerRunning) return;
@@ -535,7 +647,12 @@ function startTick() {
   }, 1000);
 }
 function stopTick() { if (tickHandle) { clearInterval(tickHandle); tickHandle = null; } }
-function stopAllTimers() { stopTick(); stopRotation(); if (coachTimer) { clearTimeout(coachTimer); coachTimer = null; } }
+function stopAllTimers() {
+  stopTick();
+  stopRotation();
+  if (coachTimer) { clearTimeout(coachTimer); coachTimer = null; }
+  stopVoice();
+}
 
 // ---------- persistence ----------
 let persistHandle = null;
@@ -557,9 +674,11 @@ function clearActive() {
 }
 
 // ---------- live AI coach ----------
-function scheduleCoach() {
+// default ~2s after typing stops; voice passes a shorter delay so probes
+// keep coming while the caller is mid-conversation
+function scheduleCoach(delay = 2200) {
   if (coachTimer) clearTimeout(coachTimer);
-  coachTimer = setTimeout(runCoach, 2200); // fire ~2s after typing stops
+  coachTimer = setTimeout(runCoach, delay);
 }
 
 async function runCoach() {
